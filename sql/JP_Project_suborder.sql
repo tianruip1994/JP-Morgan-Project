@@ -28,7 +28,10 @@ CREATE TABLE `suborder` (
   `time` datetime DEFAULT NULL,
   `volume` decimal(2,0) DEFAULT NULL,
   `price` decimal(2,0) DEFAULT NULL,
-  PRIMARY KEY (`suborder_id`)
+  `order_id` int(11) DEFAULT NULL,
+  PRIMARY KEY (`suborder_id`),
+  KEY `order_id_idx` (`order_id`),
+  CONSTRAINT `order_id` FOREIGN KEY (`order_id`) REFERENCES `Order` (`order_id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -38,7 +41,7 @@ CREATE TABLE `suborder` (
 
 LOCK TABLES `suborder` WRITE;
 /*!40000 ALTER TABLE `suborder` DISABLE KEYS */;
-INSERT INTO `suborder` VALUES (7,1,NULL,5,14),(8,1,NULL,5,10),(9,1,NULL,10,13);
+INSERT INTO `suborder` VALUES (7,1,NULL,5,14,1),(8,1,NULL,5,10,1),(9,1,NULL,10,13,1);
 /*!40000 ALTER TABLE `suborder` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -51,4 +54,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2016-10-25 16:27:30
+-- Dump completed on 2016-10-25 17:06:13

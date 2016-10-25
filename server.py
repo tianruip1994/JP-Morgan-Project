@@ -20,10 +20,33 @@ class User(db.Model):
     def __repr__(self):
         return '<User %r>' % self.username
 
+class Order(db.Model):
+    __tablename__ = 'Order'
+    order_id = db.Column(db.Integer, primary_key=True)
+    totalVolume = db.Column(db.Integer)
+    def __init__(self, totalVolume):
+        self.totalVolume = totalVolume
+    def __repr__(self):
+        return '<Order %d>' % self.order_id
+    #split function goes here---------
+
+class Suborder(db.Model):
+    __tablename__ = 'Suborder'
+    suborder_id = db.Column(db.Integer, primary_key=True)
+    status = db.Column(db.Double)
+    time = db.Column(db.DateTime)
+    volume = db.Column(db.Decimal)
+    price = db.Column(db.Decimal)
+    def __init__(self, status, time, volume, price):
+        self.status = status;
+        self.time = time;
+        self.volume = volume;
+        self.price = price;
+    #execute suborder function goes here--------
+
 @app.route('/')
 def index():
     return render_template("index.html")
-
 
 @app.route('/loginpage')
 def loginPage():
