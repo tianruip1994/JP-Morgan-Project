@@ -26,8 +26,8 @@ CREATE TABLE `suborder` (
   `suborder_id` int(11) NOT NULL AUTO_INCREMENT,
   `status` tinyint(4) NOT NULL,
   `time` datetime DEFAULT NULL,
-  `volume` decimal(2,0) DEFAULT NULL,
-  `price` decimal(2,0) DEFAULT NULL,
+  `volume` int(11) DEFAULT NULL,
+  `price` decimal(5,2) DEFAULT NULL,
   `order_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`suborder_id`),
   KEY `order_id_idx` (`order_id`),
@@ -41,7 +41,7 @@ CREATE TABLE `suborder` (
 
 LOCK TABLES `suborder` WRITE;
 /*!40000 ALTER TABLE `suborder` DISABLE KEYS */;
-INSERT INTO `suborder` VALUES (7,1,NULL,5,14,1),(8,1,NULL,5,10,1),(9,1,NULL,10,13,1);
+INSERT INTO `suborder` VALUES (7,1,NULL,5,14.50,1),(8,1,NULL,5,10.22,1),(9,1,NULL,10,13.00,1);
 /*!40000 ALTER TABLE `suborder` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -54,4 +54,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2016-10-25 17:06:13
+-- Dump completed on 2016-10-25 18:11:44

@@ -13,5 +13,12 @@
     </div>
     {% endif %}
 <h1 style="margin-top:100px">Welcome {{user.username}}!</h1>
-
+    {% for i in result %}
+    <tr>
+        <td>id{{i.suborder_id}}</td>
+        <td>status{{i.status}}</td> 
+        <td>volume{{i.volume}}</td>
+        <td>${{i.price}}</td>
+    </tr>
+    {% endfor %}
 {% endblock %}

@@ -12,6 +12,7 @@ class User(db.Model):
     uid = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(45), unique=True)
     password = db.Column(db.String(45))
+    #orders = db.relationship('Order', backref='user', lazy='dynamic')
 
     def __init__(self, username, password):
         self.username = username
@@ -24,6 +25,8 @@ class Order(db.Model):
     __tablename__ = 'Order'
     order_id = db.Column(db.Integer, primary_key=True)
     totalVolume = db.Column(db.Integer)
+    uid = db.Column(db.Integer, db.ForeignKey('user.uid'))
+
     def __init__(self, totalVolume):
         self.totalVolume = totalVolume
     def __repr__(self):
@@ -33,10 +36,11 @@ class Order(db.Model):
 class Suborder(db.Model):
     __tablename__ = 'Suborder'
     suborder_id = db.Column(db.Integer, primary_key=True)
-    status = db.Column(db.Double)
+    status = db.Column(db.Float)
     time = db.Column(db.DateTime)
-    volume = db.Column(db.Decimal)
-    price = db.Column(db.Decimal)
+    volume = db.Column(db.Float)
+    price = db.Column(db.Float)
+    order_id = db.Column(db.Integer)
     def __init__(self, status, time, volume, price):
         self.status = status;
         self.time = time;
@@ -82,7 +86,7 @@ def login():
         if user is not None:
             session['uid'] = user.uid
             context = dict(user=user)
-            return render_template('profile.html', **context)
+            return redirect('/userProfile')
         else:
             error = 'Oops! We cannot find this combination of username and password in our database.'
             context = dict(error=error)
@@ -93,8 +97,11 @@ def login():
 def userProfile():
     uid = session['uid']
     user = User.query.filter_by(uid=uid).first()
+    orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).first()
+    order_id = orders.order_id
+    result = Suborder.query.filter_by(order_id=order_id).all()
     if user is not None:
-        context = dict(user=user)
+        context = dict(user=user,result=result)
         return render_template('profile.html', **context)
     else:
         error = 'Please login to view profile page.'
@@ -130,4 +137,4 @@ def signout():
     return redirect('/')
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
