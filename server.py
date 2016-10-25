@@ -1,9 +1,10 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask, session, request, render_template, redirect
+from flask_table import Table, Col
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'development key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:12345@localhost/JP_Project' #'mysql://test_user:asease@localhost/hw2'#
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:root@localhost/JP_Project' #'mysql://test_user:asease@localhost/hw2'#
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -12,7 +13,7 @@ class User(db.Model):
     uid = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(45), unique=True)
     password = db.Column(db.String(45))
-    #orders = db.relationship('Order', backref='user', lazy='dynamic')
+    # orders = db.relationship('Order', backref='user', lazy='dynamic')
 
     def __init__(self, username, password):
         self.username = username
@@ -48,9 +49,24 @@ class Suborder(db.Model):
         self.price = price;
     #execute suborder function goes here--------
 
+class ItemTable(Table):
+    suborder_id = Col('Order_ID')
+    status = Col('Status')
+    volume = Col('Description')
+    price = Col('Price')
+
+class Item(object):
+    def __init__(self, order_Id, status, quantity, price):
+        self.order_Id = order_id
+        self.status = status
+        self.quantity = volume
+        self.price = price
+
+
 @app.route('/')
 def index():
     return render_template("index.html")
+
 
 @app.route('/loginpage')
 def loginPage():
@@ -74,6 +90,15 @@ def register():
         context = dict(msg=msg)
         return render_template("login.html", **context)
 
+def is_order_submit(uid):
+    """Based on the user_ID, check whether user has order or not
+    return true is user had submitted order"""
+    #need to be filled
+    orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).first()
+    # order_id = orders.order_id
+    # result = Suborder.query.filter_by(order_id=order_id).all()
+    print("orders: " + str(orders))
+    return not orders == None
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -85,27 +110,57 @@ def login():
             username=username, password=password).first()
         if user is not None:
             session['uid'] = user.uid
+            submit = is_order_submit(user.uid)
+            print(submit)
             context = dict(user=user)
-            return redirect('/userProfile')
+            # return render_template('profile.html', **context)
+            if submit:
+                return redirect('/userProfile')
+            else:
+                return render_template("submitOrder.html")
+                # return redirect('/userProfile')
         else:
             error = 'Oops! We cannot find this combination of username and password in our database.'
             context = dict(error=error)
             return render_template("login.html", **context)
 
+@app.route('/submitOrder', methods=['POST'])
+def submitOrder():
+    quantity = request.form['quantity']
+    print(quantity)
+    print(session['uid'])
+    new_order = Order(quantity,session['uid'])
+    db.session.add(new_order)
+    db.session.commit()
+    return render_template("submitOrder.html")
+
+def get_items(uid):
+    """Based on the user_ID, get list of orders that belongs to user from the database
+    expect output: list[dict(information_from_database)]"""
+    orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).first()
+    order_id = orders.order_id
+    result = Suborder.query.filter_by(order_id=order_id).all()
+    return result
 
 @app.route('/userProfile')
 def userProfile():
     uid = session['uid']
     user = User.query.filter_by(uid=uid).first()
-    orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).first()
-    order_id = orders.order_id
-    result = Suborder.query.filter_by(order_id=order_id).all()
-
+    # orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).first()
+    # order_id = orders.order_id
+    # result = Suborder.query.filter_by(order_id=order_id).all()
+    items = get_items(uid)
+    print(items)
+    table = ItemTable(items)
     if user is not None:
-        context = dict(user=user,result=result)
-        return render_template('profile.html', **context)
+        context = dict(user=user)
+        print("context")
+        print(context)
+        return render_template('profile.html', table=table, **context)
     else:
         error = 'Please login to view profile page.'
+        context['status'] = True
+        context['quantity'] = 20
         context = dict(error=error)
         return render_template("index.html", **context)
 
