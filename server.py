@@ -25,10 +25,10 @@ class Order(db.Model):
     __tablename__ = 'Order'
     order_id = db.Column(db.Integer, primary_key=True)
     totalVolume = db.Column(db.Integer)
-    uid = db.Column(db.Integer, db.ForeignKey('user.uid'))
-
-    def __init__(self, totalVolume):
+    uid = db.Column(db.Integer)#, db.ForeignKey('user.uid'))
+    def __init__(self, totalVolume, uid):
         self.totalVolume = totalVolume
+        self.uid = uid
     def __repr__(self):
         return '<Order %d>' % self.order_id
     #split function goes here---------
@@ -40,7 +40,7 @@ class Suborder(db.Model):
     time = db.Column(db.DateTime)
     volume = db.Column(db.Float)
     price = db.Column(db.Float)
-    order_id = db.Column(db.Integer)
+    order_id = db.Column(db.Integer)#, db.ForeignKey('order.order_id'))
     def __init__(self, status, time, volume, price):
         self.status = status;
         self.time = time;
@@ -100,7 +100,7 @@ def userProfile():
     orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).first()
     order_id = orders.order_id
     result = Suborder.query.filter_by(order_id=order_id).all()
-    
+
     if user is not None:
         context = dict(user=user,result=result)
         return render_template('profile.html', **context)
@@ -109,6 +109,14 @@ def userProfile():
         context = dict(error=error)
         return render_template("index.html", **context)
 
+@app.route('/submitOrder')
+def submitOrder():
+    quantity = 10
+    uid = session['uid']
+    new_order = Order(quantity, uid)
+    db.session.add(new_order)
+    db.session.commit()
+    return redirect('/userProfile')
 
 @app.route('/forgotPassword')
 def forgotPassword():
