@@ -62,7 +62,6 @@ class Item(object):
         self.quantity = volume
         self.price = price
 
-
 @app.route('/')
 def index():
     return render_template("index.html")
@@ -95,9 +94,6 @@ def is_order_submit(uid):
     return true is user had submitted order"""
     #need to be filled
     orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).first()
-    # order_id = orders.order_id
-    # result = Suborder.query.filter_by(order_id=order_id).all()
-    print("orders: " + str(orders))
     return not orders == None
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -115,9 +111,9 @@ def login():
             context = dict(user=user)
             # return render_template('profile.html', **context)
             if submit:
-                return redirect('/userProfile')
+                return redirect('/userProfile', **context)
             else:
-                return render_template("submitOrder.html")
+                return render_template("submitOrder.html", **context)
                 # return redirect('/userProfile')
         else:
             error = 'Oops! We cannot find this combination of username and password in our database.'
@@ -163,15 +159,6 @@ def userProfile():
         context['quantity'] = 20
         context = dict(error=error)
         return render_template("index.html", **context)
-
-@app.route('/submitOrder')
-def submitOrder():
-    quantity = 10
-    uid = session['uid']
-    new_order = Order(quantity, uid)
-    db.session.add(new_order)
-    db.session.commit()
-    return redirect('/userProfile')
 
 @app.route('/forgotPassword')
 def forgotPassword():
