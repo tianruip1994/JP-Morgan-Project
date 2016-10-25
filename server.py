@@ -100,6 +100,7 @@ def userProfile():
     orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).first()
     order_id = orders.order_id
     result = Suborder.query.filter_by(order_id=order_id).all()
+    
     if user is not None:
         context = dict(user=user,result=result)
         return render_template('profile.html', **context)
