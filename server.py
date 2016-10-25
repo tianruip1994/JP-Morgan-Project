@@ -3,7 +3,7 @@ from flask import Flask, session, request, render_template, redirect
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'development key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:12345@localhost/HW2' #'mysql://test_user:asease@localhost/hw2'#
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:12345@localhost/JP_Project' #'mysql://test_user:asease@localhost/hw2'#
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
