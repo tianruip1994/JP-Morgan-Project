@@ -95,6 +95,7 @@ class Suborder(db.Model):
         self.time = time
         self.volume = volume
         self.price = price
+        self.order_id = order_id
     def sell(self):
         # Attempt to execute a sell order.
         print("in sell")
