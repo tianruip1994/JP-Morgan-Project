@@ -16,7 +16,7 @@ ORDER = "http://localhost:8080/order?id={}&side=sell&qty={}&price={}"
 curPrice = 0
 priceLock = threading.Lock()
 
-ORDER_DISCOUNT = 10
+ORDER_DISCOUNT = 5
 INVENTORY      = 1000
 
 import threading
@@ -96,13 +96,11 @@ class Suborder(db.Model):
         self.volume = volume
         self.price = price
     def sell(self):
+        global curPrice
         # Attempt to execute a sell order.
         print("in sell")
         sys.stdout.flush()
-        priceLock.acquire()
-        tmpPrice = curPrice
-        priceLock.release()
-        order_args = (self.volume, tmpPrice - ORDER_DISCOUNT)
+        order_args = (self.volume, curPrice - ORDER_DISCOUNT)
         print "Executing 'sell' of {:,} @ {:,}".format(*order_args)
         url   = ORDER.format(random.random(), *order_args)
         order = json.loads(urllib2.urlopen(url).read())
@@ -292,7 +290,7 @@ def signout():
 def getPrice():
     print "start get price from JP-server"
     # get price from JP-server continously.
-
+    global curPrice
     while True:
 
         # Query the price once every 1 seconds.
