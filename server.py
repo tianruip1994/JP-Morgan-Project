@@ -1,6 +1,7 @@
-from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy 
 from flask import Flask, session, request, render_template, redirect
 from flask_table import Table, Col
+import datetime
 
 import threading
 import time
@@ -14,6 +15,9 @@ ORDER = "http://localhost:8080/order?id={}&side=sell&qty={}&price={}"
 
 curPrice = 0
 priceLock = threading.Lock()
+
+ORDER_DISCOUNT = 10
+INVENTORY      = 1000
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'development key'
@@ -58,10 +62,37 @@ class Suborder(db.Model):
     price = db.Column(db.Float)
     order_id = db.Column(db.Integer)#, db.ForeignKey('order.order_id'))
     def __init__(self, status, time, volume, price):
-        self.status = status;
-        self.time = time;
-        self.volume = volume;
-        self.price = price;
+        self.status = status
+        self.time = time
+        self.volume = volume
+        self.price = price
+    def sell(self):
+        # Attempt to execute a sell order.
+        priceLock.acquire()
+        tmpPrice = curPrice
+        priceLock.release()
+        order_args = (self.volume, tmpPrice - ORDER_DISCOUNT)
+        print "Executing 'sell' of {:,} @ {:,}".format(*order_args)
+        url   = ORDER.format(random.random(), *order_args)
+        order = json.loads(urllib2.urlopen(url).read())
+
+        # Update the PnL if the order was filled.
+        if order['avg_price'] > 0:
+            price    = order['avg_price']
+            notional = float(price * ORDER_SIZE)
+            print "Sold {:,} for ${:,}/share, ${:,} notional".format(self.volume, price, notional)
+            self.status = 1
+            self.price = price
+        else:
+            print "Unfilled order"
+            self.status = 0
+
+        self.time = datetime.datetime.utcnow
+        db.session.add(self)
+        db.session.commit()
+        
+        return -sel.status
+    
     #execute suborder function goes here--------
 
 class ItemTable(Table):
