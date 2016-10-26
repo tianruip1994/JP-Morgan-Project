@@ -23,8 +23,6 @@ import threading
 import time
 import sys
 
-priceLock = threading.Lock()
-
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'development key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:12345@localhost/JP_Project' #'mysql://test_user:asease@localhost/hw2'#
@@ -57,20 +55,26 @@ class Order(db.Model):
         self.uid = uid
     def __repr__(self):
         return '<Order %d>' % self.order_id
-    def sellOrder():
-    	while (len(subOrderList)):
-    		sell = suborderList[0].sell()
+    def sellOrder(self):
+    	print(self.uid)
+    	print("in sellOrder")
+    	print(len(self.suborderList))
+    	sys.stdout.flush()
+    	while (len(self.suborderList)):
+    		sell = self.suborderList[0].sell()
+    		print("after sell")
+    		sys.stdout.flush()
     		if (sell >= 0):
-    			del suborderList[0]
-    			totalVolume = totalVolume - sell
-    			numOfSlice = len(subOrderList);
+    			del self.suborderList[0]
+    			self.totalVolume = self.totalVolume - sell
+    			numOfSlice = len(self.suborderList);
     			# TODO what should we do if we cannot sell all of the suborders at last
     			if (numOfSlice == 0):
     				numOfSlice = 1
-    			subOrderList = SplitAlgorithm.tw(Order, numOfSlice)
+    			self.suborderList = SplitAlgorithm.tw(Order, numOfSlice)
     		else:
-    			del suborderList[0]
-    		sleep(5)
+    			del self.suborderList[0]
+    		time.sleep(2)
 
 
 
@@ -93,6 +97,8 @@ class Suborder(db.Model):
         self.price = price
     def sell(self):
         # Attempt to execute a sell order.
+        print("in sell")
+        sys.stdout.flush()
         priceLock.acquire()
         tmpPrice = curPrice
         priceLock.release()
@@ -104,7 +110,7 @@ class Suborder(db.Model):
         # Update the PnL if the order was filled.
         if order['avg_price'] > 0:
             price    = order['avg_price']
-            notional = float(price * ORDER_SIZE)
+            notional = float(price * self.volume)
             print "Sold {:,} for ${:,}/share, ${:,} notional".format(self.volume, price, notional)
             self.status = 1
             self.price = price
@@ -112,11 +118,11 @@ class Suborder(db.Model):
             print "Unfilled order"
             self.status = 0
 
-        self.time = datetime.datetime.utcnow
+        self.time = datetime.datetime.utcnow()
         db.session.add(self)
         db.session.commit()
         
-        return -sel.status
+        return -self.status
     
     #execute suborder function goes here--------
 
@@ -128,7 +134,10 @@ class SplitAlgorithm(object):
 		remind = order.totalVolume % numOfSlice
 		for i in range(0, remind):
 			re[i] = re[i] + 1
-		return re
+		suborderList = []
+		for i in range(0, numOfSlice):
+			suborderList.append(Suborder(0, datetime.datetime.utcnow(), re[i], 0))
+		return suborderList
 
 
 class ItemTable(Table):
@@ -212,12 +221,14 @@ def submitOrder():
     # split order
     # new_order.suborders = algo.two()
     db.session.commit()
-    new_order.subOrderList = SplitAlgorithm.tw(new_order,10)
-    print(new_order.subOrderList)
+    new_order.suborderList = SplitAlgorithm.tw(new_order, 5)
+    for i in range(0, len(new_order.suborderList)):
+    	print(new_order.suborderList[i].volume)
     print("hello")
     sys.stdout.flush()
     # create a new thread for the order
-    orderTread = threading.Thread(target = new_order.sellOrder())
+    orderTread = threading.Thread(target = new_order.sellOrder(), args = (), name = "newOrder")
+    orderTread.start()
     return render_template("submitOrder.html")
 
 def get_items(uid):
@@ -290,6 +301,7 @@ def getPrice():
         curPrice = float(quote['top_bid']['price'])
         priceLock.release()
         print "Quoted at %s" % curPrice
+        sys.stdout.flush()
 
         time.sleep(1)
 
