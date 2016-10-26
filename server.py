@@ -34,7 +34,7 @@ class User(db.Model):
     uid = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(45), unique=True)
     password = db.Column(db.String(45))
-    # orders = db.relationship('Order', backref='user', lazy='dynamic')
+    #orders = db.relationship('Order', backref='user.uid', lazy='joined')
 
     def __init__(self, username, password):
         self.username = username
@@ -75,9 +75,6 @@ class Order(db.Model):
     		else:
     			del self.suborderList[0]
     		time.sleep(2)
-
-
-
 
 
     #split function goes here---------
@@ -229,14 +226,17 @@ def submitOrder():
     # create a new thread for the order
     orderTread = threading.Thread(target = new_order.sellOrder(), args = (), name = "newOrder")
     orderTread.start()
-    return render_template("submitOrder.html")
+    return redirect('/userProfile')
 
 def get_items(uid):
     """Based on the user_ID, get list of orders that belongs to user from the database
     expect output: list[dict(information_from_database)]"""
-    orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).first()
-    order_id = orders.order_id
-    result = Suborder.query.filter_by(order_id=order_id).all()
+    orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).all()
+    order_ids=[]
+    for o in orders:
+        order_ids.append(o.order_id)
+    print(order_ids)
+    result = Suborder.query.filter(Suborder.order_id.in_(order_ids)).all()
     return result
 
 @app.route('/userProfile')
