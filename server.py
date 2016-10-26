@@ -17,7 +17,6 @@ curPrice = 0
 priceLock = threading.Lock()
 
 ORDER_DISCOUNT = 5
-INVENTORY      = 1000
 
 import threading
 import time
@@ -76,6 +75,8 @@ class Order(db.Model):
     			self.suborderList = SplitAlgorithm.tw(Order, numOfSlice)
     		else:
     			del self.suborderList[0]
+            #-------------- ATTENTION -----------------
+            #time interval between each sell
     		time.sleep(2)
 
 
@@ -100,7 +101,14 @@ class Suborder(db.Model):
         # Attempt to execute a sell order.
         print("in sell")
         sys.stdout.flush()
-        order_args = (self.volume, curPrice - ORDER_DISCOUNT)
+
+        #-------------- ATTENTION -----------------
+        # standard way to read curPrice
+        priceLock.acquire()
+        tmpPrice = curPrice
+        priceLock.release()
+
+        order_args = (self.volume, tmpPrice - ORDER_DISCOUNT)
         print "Executing 'sell' of {:,} @ {:,}".format(*order_args)
         url   = ORDER.format(random.random(), *order_args)
         order = json.loads(urllib2.urlopen(url).read())
@@ -116,7 +124,7 @@ class Suborder(db.Model):
             print "Unfilled order"
             self.status = 0
 
-        self.time = datetime.utcnow()
+        self.time = datetime.now()
         db.session.add(self)
         db.session.commit()
         
@@ -132,7 +140,7 @@ class SplitAlgorithm(object):
 			re[i] = re[i] + 1
 		suborderList = []
 		for i in range(0, numOfSlice):
-			suborderList.append(Suborder(0, datetime.utcnow(), re[i], 0, order.order_id))
+			suborderList.append(Suborder(0, datetime.now(), re[i], 0, order.order_id))
 		return suborderList
 
 
@@ -220,6 +228,9 @@ def submitOrder():
     # split order
     # new_order.suborders = algo.two()
     db.session.commit()
+
+    #-------------- ATTENTION -----------------
+    #times in which the order will be sold
     new_order.suborderList = SplitAlgorithm.tw(new_order, 5)
     for i in range(0, len(new_order.suborderList)):
     	print(new_order.suborderList[i].volume)
