@@ -90,11 +90,12 @@ class Suborder(db.Model):
     volume = db.Column(db.Float)
     price = db.Column(db.Float)
     order_id = db.Column(db.Integer)#, db.ForeignKey('order.order_id'))
-    def __init__(self, status, time, volume, price):
+    def __init__(self, status, time, volume, price, order_id):
         self.status = status
         self.time = time
         self.volume = volume
         self.price = price
+        self.order_id = order_id
     def sell(self):
         global curPrice
         # Attempt to execute a sell order.
@@ -121,8 +122,6 @@ class Suborder(db.Model):
         db.session.commit()
         
         return -self.status
-    
-    #execute suborder function goes here--------
 
 
 class SplitAlgorithm(object):
@@ -134,7 +133,7 @@ class SplitAlgorithm(object):
 			re[i] = re[i] + 1
 		suborderList = []
 		for i in range(0, numOfSlice):
-			suborderList.append(Suborder(0, datetime.datetime.utcnow(), re[i], 0))
+			suborderList.append(Suborder(0, datetime.datetime.utcnow(), re[i], 0, order.order_id))
 		return suborderList
 
 
@@ -154,7 +153,6 @@ class Item(object):
 @app.route('/')
 def index():
     return render_template("index.html")
-
 
 @app.route('/loginpage')
 def loginPage():
@@ -202,12 +200,16 @@ def login():
             if submit:
                 return redirect('/userProfile')
             else:
-                return render_template("submitOrder.html", **context)
+                return render_template("submitOrder.html")
                 # return redirect('/userProfile')
         else:
             error = 'Oops! We cannot find this combination of username and password in our database.'
             context = dict(error=error)
             return render_template("login.html", **context)
+
+@app.route('/createOrder')
+def createOrder():
+    return render_template("submitOrder.html")
 
 @app.route('/submitOrder', methods=['POST'])
 def submitOrder():
@@ -222,7 +224,7 @@ def submitOrder():
     new_order.suborderList = SplitAlgorithm.tw(new_order, 5)
     for i in range(0, len(new_order.suborderList)):
     	print(new_order.suborderList[i].volume)
-    print("hello")
+    
     sys.stdout.flush()
     # create a new thread for the order
     orderTread = threading.Thread(target = new_order.sellOrder(), args = (), name = "newOrder")
@@ -245,12 +247,9 @@ def userProfile():
     # order_id = orders.order_id
     # result = Suborder.query.filter_by(order_id=order_id).all()
     items = get_items(uid)
-    print(items)
     table = ItemTable(items)
     if user is not None:
-        context = dict(user=user)
-        print("context")
-        print(context)
+        context = dict(user=user, items=items)
         return render_template('profile.html', table=table, **context)
     else:
         error = 'Please login to view profile page.'
