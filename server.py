@@ -1,6 +1,27 @@
-from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy 
 from flask import Flask, session, request, render_template, redirect
 from flask_table import Table, Col
+import datetime
+
+import threading
+import time
+import urllib2
+import json
+import random
+
+# Server API URLs
+QUERY = "http://localhost:8080/query?id={}"
+ORDER = "http://localhost:8080/order?id={}&side=sell&qty={}&price={}"
+
+curPrice = 0
+priceLock = threading.Lock()
+
+ORDER_DISCOUNT = 10
+INVENTORY      = 1000
+
+import threading
+import time
+import sys
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'development key'
@@ -27,11 +48,38 @@ class Order(db.Model):
     order_id = db.Column(db.Integer, primary_key=True)
     totalVolume = db.Column(db.Integer)
     uid = db.Column(db.Integer)#, db.ForeignKey('user.uid'))
+    suborderList = []
+
     def __init__(self, totalVolume, uid):
         self.totalVolume = totalVolume
         self.uid = uid
     def __repr__(self):
         return '<Order %d>' % self.order_id
+    def sellOrder(self):
+    	print(self.uid)
+    	print("in sellOrder")
+    	print(len(self.suborderList))
+    	sys.stdout.flush()
+    	while (len(self.suborderList)):
+    		sell = self.suborderList[0].sell()
+    		print("after sell")
+    		sys.stdout.flush()
+    		if (sell >= 0):
+    			del self.suborderList[0]
+    			self.totalVolume = self.totalVolume - sell
+    			numOfSlice = len(self.suborderList);
+    			# TODO what should we do if we cannot sell all of the suborders at last
+    			if (numOfSlice == 0):
+    				numOfSlice = 1
+    			self.suborderList = SplitAlgorithm.tw(Order, numOfSlice)
+    		else:
+    			del self.suborderList[0]
+    		time.sleep(2)
+
+
+
+
+
     #split function goes here---------
 
 class Suborder(db.Model):
@@ -47,7 +95,48 @@ class Suborder(db.Model):
         self.time = time
         self.volume = volume
         self.price = price
-    #execute suborder function goes here--------
+    def sell(self):
+        # Attempt to execute a sell order.
+        print("in sell")
+        sys.stdout.flush()
+        priceLock.acquire()
+        tmpPrice = curPrice
+        priceLock.release()
+        order_args = (self.volume, tmpPrice - ORDER_DISCOUNT)
+        print "Executing 'sell' of {:,} @ {:,}".format(*order_args)
+        url   = ORDER.format(random.random(), *order_args)
+        order = json.loads(urllib2.urlopen(url).read())
+
+        # Update the PnL if the order was filled.
+        if order['avg_price'] > 0:
+            price    = order['avg_price']
+            notional = float(price * self.volume)
+            print "Sold {:,} for ${:,}/share, ${:,} notional".format(self.volume, price, notional)
+            self.status = 1
+            self.price = price
+        else:
+            print "Unfilled order"
+            self.status = 0
+
+        self.time = datetime.datetime.utcnow()
+        db.session.add(self)
+        db.session.commit()
+        
+        return -self.status
+
+
+class SplitAlgorithm(object):
+	@staticmethod
+	def tw(order, numOfSlice):
+		re = [order.totalVolume/numOfSlice] * (numOfSlice);
+		remind = order.totalVolume % numOfSlice
+		for i in range(0, remind):
+			re[i] = re[i] + 1
+		suborderList = []
+		for i in range(0, numOfSlice):
+			suborderList.append(Suborder(0, datetime.datetime.utcnow(), re[i], 0))
+		return suborderList
+
 
 class ItemTable(Table):
     suborder_id = Col('Order_ID')
@@ -130,7 +219,17 @@ def submitOrder():
     print(session['uid'])
     new_order = Order(quantity,session['uid'])
     db.session.add(new_order)
+    # split order
+    # new_order.suborders = algo.two()
     db.session.commit()
+    new_order.suborderList = SplitAlgorithm.tw(new_order, 5)
+    for i in range(0, len(new_order.suborderList)):
+    	print(new_order.suborderList[i].volume)
+    print("hello")
+    sys.stdout.flush()
+    # create a new thread for the order
+    orderTread = threading.Thread(target = new_order.sellOrder(), args = (), name = "newOrder")
+    orderTread.start()
     return render_template("submitOrder.html")
 
 def get_items(uid):
@@ -187,5 +286,27 @@ def signout():
     session.pop('uid', None)
     return redirect('/')
 
+
+def getPrice():
+    print "start get price from JP-server"
+    # get price from JP-server continously.
+
+    while True:
+
+        # Query the price once every 1 seconds.
+        quote = json.loads(urllib2.urlopen(QUERY.format(random.random())).read())
+        priceLock.acquire()
+        curPrice = float(quote['top_bid']['price'])
+        priceLock.release()
+        print "Quoted at %s" % curPrice
+        sys.stdout.flush()
+
+        time.sleep(1)
+
+    print "stop get price from JP-server"
+
 if __name__ == "__main__":
+    t = threading.Thread(target=getPrice, args=(), name="getPriceDaemon")
+    t.daemon = True
+    t.start()
     app.run(debug=True)
