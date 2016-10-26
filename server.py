@@ -2,9 +2,15 @@ from flask_sqlalchemy import SQLAlchemy
 from flask import Flask, session, request, render_template, redirect
 from flask_table import Table, Col
 
+import threading
+import time
+import sys
+
+priceLock = threading.Lock()
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'development key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:root@localhost/JP_Project' #'mysql://test_user:asease@localhost/hw2'#
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:12345@localhost/JP_Project' #'mysql://test_user:asease@localhost/hw2'#
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -27,11 +33,31 @@ class Order(db.Model):
     order_id = db.Column(db.Integer, primary_key=True)
     totalVolume = db.Column(db.Integer)
     uid = db.Column(db.Integer)#, db.ForeignKey('user.uid'))
+    suborderList = []
     def __init__(self, totalVolume, uid):
         self.totalVolume = totalVolume
         self.uid = uid
     def __repr__(self):
         return '<Order %d>' % self.order_id
+    def sellOrder():
+    	while (len(subOrderList)):
+    		sell = suborderList[0].sell()
+    		if (sell >= 0):
+    			del suborderList[0]
+    			totalVolume = totalVolume - sell
+    			numOfSlice = len(subOrderList);
+    			# TODO what should we do if we cannot sell all of the suborders at last
+    			if (numOfSlice == 0):
+    				numOfSlice = 1
+    			subOrderList = SplitAlgorithm.tw(Order, numOfSlice)
+    		else:
+    			del suborderList[0]
+    		sleep(5)
+
+
+
+
+
     #split function goes here---------
 
 class Suborder(db.Model):
@@ -48,6 +74,17 @@ class Suborder(db.Model):
         self.volume = volume;
         self.price = price;
     #execute suborder function goes here--------
+
+
+class SplitAlgorithm(object):
+	@staticmethod
+	def tw(order, numOfSlice):
+		re = [order.totalVolume/numOfSlice] * (numOfSlice);
+		remind = order.totalVolume % numOfSlice
+		for i in range(0, remind):
+			re[i] = re[i] + 1
+		return re
+
 
 class ItemTable(Table):
     suborder_id = Col('Order_ID')
@@ -111,7 +148,7 @@ def login():
             context = dict(user=user)
             # return render_template('profile.html', **context)
             if submit:
-                return redirect('/userProfile', **context)
+                return redirect('/userProfile')
             else:
                 return render_template("submitOrder.html", **context)
                 # return redirect('/userProfile')
@@ -128,6 +165,12 @@ def submitOrder():
     new_order = Order(quantity,session['uid'])
     db.session.add(new_order)
     db.session.commit()
+    new_order.subOrderList = SplitAlgorithm.tw(new_order,10)
+    print(new_order.subOrderList)
+    print("hello")
+    sys.stdout.flush()
+    # create a new thread for the order
+    orderTread = threading.Thread(target = new_order.sellOrder())
     return render_template("submitOrder.html")
 
 def get_items(uid):
