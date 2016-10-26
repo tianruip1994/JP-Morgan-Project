@@ -4,7 +4,7 @@ from flask_table import Table, Col
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'development key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:root@localhost/JP_Project' #'mysql://test_user:asease@localhost/hw2'#
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:12345@localhost/JP_Project' #'mysql://test_user:asease@localhost/hw2'#
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -66,7 +66,6 @@ class Item(object):
 def index():
     return render_template("index.html")
 
-
 @app.route('/loginpage')
 def loginPage():
     return render_template("login.html")
@@ -111,14 +110,18 @@ def login():
             context = dict(user=user)
             # return render_template('profile.html', **context)
             if submit:
-                return redirect('/userProfile', **context)
+                return redirect('/userProfile')
             else:
-                return render_template("submitOrder.html", **context)
+                return render_template("submitOrder.html")
                 # return redirect('/userProfile')
         else:
             error = 'Oops! We cannot find this combination of username and password in our database.'
             context = dict(error=error)
             return render_template("login.html", **context)
+
+@app.route('/createOrder')
+def createOrder():
+    return render_template("submitOrder.html")
 
 @app.route('/submitOrder', methods=['POST'])
 def submitOrder():
