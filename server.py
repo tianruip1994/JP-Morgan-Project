@@ -2,9 +2,22 @@ from flask_sqlalchemy import SQLAlchemy
 from flask import Flask, session, request, render_template, redirect
 from flask_table import Table, Col
 
+import threading
+import time
+import urllib2
+import json
+import random
+
+# Server API URLs
+QUERY = "http://localhost:8080/query?id={}"
+ORDER = "http://localhost:8080/order?id={}&side=sell&qty={}&price={}"
+
+curPrice = 0
+priceLock = threading.Lock()
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'development key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:root@localhost/JP_Project' #'mysql://test_user:asease@localhost/hw2'#
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:12345@localhost/JP_Project' #'mysql://test_user:asease@localhost/hw2'#
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -27,6 +40,8 @@ class Order(db.Model):
     order_id = db.Column(db.Integer, primary_key=True)
     totalVolume = db.Column(db.Integer)
     uid = db.Column(db.Integer)#, db.ForeignKey('user.uid'))
+    #suborders[]
+
     def __init__(self, totalVolume, uid):
         self.totalVolume = totalVolume
         self.uid = uid
@@ -111,7 +126,7 @@ def login():
             context = dict(user=user)
             # return render_template('profile.html', **context)
             if submit:
-                return redirect('/userProfile', **context)
+                return redirect('/userProfile')
             else:
                 return render_template("submitOrder.html", **context)
                 # return redirect('/userProfile')
@@ -127,6 +142,8 @@ def submitOrder():
     print(session['uid'])
     new_order = Order(quantity,session['uid'])
     db.session.add(new_order)
+    # split order
+    new_order.suborders = algo.two()
     db.session.commit()
     return render_template("submitOrder.html")
 
@@ -187,5 +204,26 @@ def signout():
     session.pop('uid', None)
     return redirect('/')
 
+
+def getPrice():
+    print "start get price from JP-server"
+    # get price from JP-server continously.
+
+    while True:
+
+        # Query the price once every 1 seconds.
+        quote = json.loads(urllib2.urlopen(QUERY.format(random.random())).read())
+        priceLock.acquire()
+        curPrice = float(quote['top_bid']['price'])
+        priceLock.release()
+        print "Quoted at %s" % curPrice
+
+        time.sleep(1)
+
+    print "stop get price from JP-server"
+
 if __name__ == "__main__":
+    t = threading.Thread(target=getPrice, args=(), name="getPriceDaemon")
+    t.daemon = True
+    t.start()
     app.run(debug=True)
