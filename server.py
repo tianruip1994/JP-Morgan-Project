@@ -43,10 +43,10 @@ class Suborder(db.Model):
     price = db.Column(db.Float)
     order_id = db.Column(db.Integer)#, db.ForeignKey('order.order_id'))
     def __init__(self, status, time, volume, price):
-        self.status = status;
-        self.time = time;
-        self.volume = volume;
-        self.price = price;
+        self.status = status
+        self.time = time
+        self.volume = volume
+        self.price = price
     #execute suborder function goes here--------
 
 class ItemTable(Table):
@@ -149,12 +149,9 @@ def userProfile():
     # order_id = orders.order_id
     # result = Suborder.query.filter_by(order_id=order_id).all()
     items = get_items(uid)
-    print(items)
     table = ItemTable(items)
     if user is not None:
-        context = dict(user=user)
-        print("context")
-        print(context)
+        context = dict(user=user, items=items)
         return render_template('profile.html', table=table, **context)
     else:
         error = 'Please login to view profile page.'
