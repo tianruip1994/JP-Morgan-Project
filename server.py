@@ -123,7 +123,6 @@ class Suborder(db.Model):
         db.session.commit()
         
         return -self.status
-    
 
 
 class SplitAlgorithm(object):
@@ -155,7 +154,6 @@ class Item(object):
 @app.route('/')
 def index():
     return render_template("index.html")
-
 
 @app.route('/loginpage')
 def loginPage():
@@ -203,12 +201,16 @@ def login():
             if submit:
                 return redirect('/userProfile')
             else:
-                return render_template("submitOrder.html", **context)
+                return render_template("submitOrder.html")
                 # return redirect('/userProfile')
         else:
             error = 'Oops! We cannot find this combination of username and password in our database.'
             context = dict(error=error)
             return render_template("login.html", **context)
+
+@app.route('/createOrder')
+def createOrder():
+    return render_template("submitOrder.html")
 
 @app.route('/submitOrder', methods=['POST'])
 def submitOrder():
@@ -246,12 +248,9 @@ def userProfile():
     # order_id = orders.order_id
     # result = Suborder.query.filter_by(order_id=order_id).all()
     items = get_items(uid)
-    print(items)
     table = ItemTable(items)
     if user is not None:
-        context = dict(user=user)
-        print("context")
-        print(context)
+        context = dict(user=user, items=items)
         return render_template('profile.html', table=table, **context)
     else:
         error = 'Please login to view profile page.'
