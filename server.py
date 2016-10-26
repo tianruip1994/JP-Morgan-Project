@@ -90,7 +90,7 @@ class Suborder(db.Model):
     volume = db.Column(db.Float)
     price = db.Column(db.Float)
     order_id = db.Column(db.Integer)#, db.ForeignKey('order.order_id'))
-    def __init__(self, status, time, volume, price):
+    def __init__(self, status, time, volume, price, order_id):
         self.status = status
         self.time = time
         self.volume = volume
@@ -124,7 +124,6 @@ class Suborder(db.Model):
         
         return -self.status
     
-    #execute suborder function goes here--------
 
 
 class SplitAlgorithm(object):
@@ -136,7 +135,7 @@ class SplitAlgorithm(object):
 			re[i] = re[i] + 1
 		suborderList = []
 		for i in range(0, numOfSlice):
-			suborderList.append(Suborder(0, datetime.datetime.utcnow(), re[i], 0))
+			suborderList.append(Suborder(0, datetime.datetime.utcnow(), re[i], 0, order.order_id))
 		return suborderList
 
 
@@ -224,7 +223,7 @@ def submitOrder():
     new_order.suborderList = SplitAlgorithm.tw(new_order, 5)
     for i in range(0, len(new_order.suborderList)):
     	print(new_order.suborderList[i].volume)
-    print("hello")
+    
     sys.stdout.flush()
     # create a new thread for the order
     orderTread = threading.Thread(target = new_order.sellOrder(), args = (), name = "newOrder")
