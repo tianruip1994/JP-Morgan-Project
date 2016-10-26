@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy 
 from flask import Flask, session, request, render_template, redirect
 from flask_table import Table, Col
-import datetime
+from datetime import datetime
 
 import threading
 import time
@@ -48,9 +48,11 @@ class Order(db.Model):
     order_id = db.Column(db.Integer, primary_key=True)
     totalVolume = db.Column(db.Integer)
     uid = db.Column(db.Integer)#, db.ForeignKey('user.uid'))
+    time = db.Column(db.DateTime)
     suborderList = []
 
-    def __init__(self, totalVolume, uid):
+    def __init__(self, totalVolume, uid,time):
+        self.time=time
         self.totalVolume = totalVolume
         self.uid = uid
     def __repr__(self):
@@ -114,7 +116,7 @@ class Suborder(db.Model):
             print "Unfilled order"
             self.status = 0
 
-        self.time = datetime.datetime.utcnow()
+        self.time = datetime.utcnow()
         db.session.add(self)
         db.session.commit()
         
@@ -130,7 +132,7 @@ class SplitAlgorithm(object):
 			re[i] = re[i] + 1
 		suborderList = []
 		for i in range(0, numOfSlice):
-			suborderList.append(Suborder(0, datetime.datetime.utcnow(), re[i], 0, order.order_id))
+			suborderList.append(Suborder(0, datetime.utcnow(), re[i], 0, order.order_id))
 		return suborderList
 
 
@@ -213,7 +215,7 @@ def submitOrder():
     quantity = request.form['quantity']
     print(quantity)
     print(session['uid'])
-    new_order = Order(quantity,session['uid'])
+    new_order = Order(quantity,session['uid'],datetime.utcnow())
     db.session.add(new_order)
     # split order
     # new_order.suborders = algo.two()
@@ -231,13 +233,15 @@ def submitOrder():
 def get_items(uid):
     """Based on the user_ID, get list of orders that belongs to user from the database
     expect output: list[dict(information_from_database)]"""
-    orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).all()
+    orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).filter(Order.time>=datetime.today()).all()
     order_ids=[]
     for o in orders:
         order_ids.append(o.order_id)
     print(order_ids)
     result = Suborder.query.filter(Suborder.order_id.in_(order_ids)).all()
-    return result
+    # process = 
+    # remainingVolume = 
+    return result#, process, remainingVolume
 
 @app.route('/userProfile')
 def userProfile():
@@ -249,7 +253,7 @@ def userProfile():
     items = get_items(uid)
     table = ItemTable(items)
     if user is not None:
-        context = dict(user=user, items=items)
+        context = dict(user=user, items=items)#,process=process,remainingVolume=remainingVolume)
         return render_template('profile.html', table=table, **context)
     else:
         error = 'Please login to view profile page.'
@@ -308,4 +312,4 @@ if __name__ == "__main__":
     t = threading.Thread(target=getPrice, args=(), name="getPriceDaemon")
     t.daemon = True
     t.start()
-    app.run(debug=True)
+    app.run(debug=True, threaded=True)
