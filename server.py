@@ -143,7 +143,7 @@ def submitOrder():
     new_order = Order(quantity,session['uid'])
     db.session.add(new_order)
     # split order
-    new_order.suborders = algo.two()
+    # new_order.suborders = algo.two()
     db.session.commit()
     return render_template("submitOrder.html")
 
