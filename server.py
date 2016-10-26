@@ -297,7 +297,7 @@ def getPrice():
         priceLock.acquire()
         curPrice = float(quote['top_bid']['price'])
         priceLock.release()
-        print "Quoted at %s" % curPrice
+        #print "Quoted at %s" % curPrice
         sys.stdout.flush()
 
         time.sleep(1)
