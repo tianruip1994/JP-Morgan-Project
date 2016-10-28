@@ -15,7 +15,9 @@ QUERY = "http://localhost:8080/query?id={}"
 ORDER = "http://localhost:8080/order?id={}&side=sell&qty={}&price={}"
 
 curPrice = 0
+orderAvailable = False
 priceLock = threading.Lock()
+orderLock = threading.Lock()
 
 ORDER_DISCOUNT = 5
 
@@ -174,6 +176,8 @@ class Item(object):
         self.quantity = volume
         self.price = price
 
+new_order = Order(-1,-1,datetime.utcnow())
+
 @app.route('/')
 def index():
     return render_template("index.html")
@@ -237,6 +241,8 @@ def createOrder():
 
 @app.route('/submitOrder', methods=['POST'])
 def submitOrder():
+    global orderAvailable
+    global new_order
     quantity = request.form['quantity']
     print(quantity)
     print(session['uid'])
@@ -254,8 +260,7 @@ def submitOrder():
     
     sys.stdout.flush()
     # create a new thread for the order
-    orderTread = threading.Thread(target = new_order.sellOrder(), args = (), name = "newOrder")
-    orderTread.start()
+    orderAvailable = True
     return redirect('/userProfile')
 
 def getOrderDetails(order_id):
@@ -353,10 +358,33 @@ def getPrice():
 
     print "stop get price from JP-server"
 
+def checkAndSell():
+    print "check and sell order"
+    
+    global orderAvailable
+    global new_order
+    while True:
+        if orderAvailable:
+            orderLock.acquire()
+            tmpOrder = new_order
+            orderLock.release()
+            orderTread = threading.Thread(target = tmpOrder.sellOrder(), args = (), name = "newOrder")
+            orderTread.start()
+            orderAvailable = False
+
+        time.sleep(1)
+
+    print "stop check and sell order"
+
+
+
 if __name__ == "__main__":
-    t = threading.Thread(target=getPrice, args=(), name="getPriceDaemon")
-    t.daemon = True
-    t.start()
+    getPriceFromJP = threading.Thread(target=getPrice, args=(), name="getPriceDaemon")
+    getPriceFromJP.daemon = True
+    getPriceFromJP.start()
+    checkAndSellOrder = threading.Thread(target=checkAndSell, args=(), name="checkAndSellDaemon")
+    checkAndSellOrder.daemon = True
+    checkAndSellOrder.start()
     #app.run(debug=True, threaded=True)
     socketio.run(app)
 
