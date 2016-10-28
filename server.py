@@ -257,37 +257,54 @@ def submitOrder():
     orderTread.start()
     return redirect('/userProfile')
 
-def get_items(uid):
+def getOrderDetails(order_id):
     """Based on the user_ID, get list of orders that belongs to user from the database
     expect output: list[dict(information_from_database)]"""
-    orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).filter(Order.time>=datetime.today()).all()
-    order_ids=[]
-    for o in orders:
-        order_ids.append(o.order_id)
-    print(order_ids)
-    result = Suborder.query.filter(Suborder.order_id.in_(order_ids)).all()
-    # process = 
-    # remainingVolume = 
-    return result#, process, remainingVolume
+    # orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).all()#filter(Order.time>=datetime.today()).all()
+    # order_ids=[]
+    # # for o in orders:
+    # #     order_ids.append(o.order_id)
+    # # print(order_ids)
+    # order_ids.append(orders[0].order_id)
+    order = Order.query.filter_by(order_id=order_id).first()
+    result = Suborder.query.filter_by(order_id=order_id).all()
+    executedVolume = 0
+    for r in result:
+        executedVolume = executedVolume + r.volume
+    totalVolume = order.totalVolume
+    process = (executedVolume / totalVolume) * 100
+    remainingVolume = totalVolume - executedVolume
+    return result, process, remainingVolume
+
+def get_orders(uid):
+    orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).all()
+    return orders
+
+@app.route('/orderDetails', methods=['POST'])
+def orderDetails():
+    uid = session['uid']
+    user = User.query.filter_by(uid=uid).first()
+    order_id = request.form['order_id']
+    # orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).first()
+    # order_id = orders.order_id
+    # result = Suborder.query.filter_by(order_id=order_id).all()
+    items,process,remainingVolume = getOrderDetails(order_id)
+    table = ItemTable(items)
+    if uid is not None:
+        context = dict(user=user, items=items,process=process,remainingVolume=remainingVolume)
+        return render_template('orderDetails.html', **context)
+    else:
+        error = 'Please login to view profile page.'
+        context = dict(error=error)
+        return render_template("login.html", **context)
 
 @app.route('/userProfile')
 def userProfile():
     uid = session['uid']
     user = User.query.filter_by(uid=uid).first()
-    # orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).first()
-    # order_id = orders.order_id
-    # result = Suborder.query.filter_by(order_id=order_id).all()
-    items = get_items(uid)
-    table = ItemTable(items)
-    if user is not None:
-        context = dict(user=user, items=items)#,process=process,remainingVolume=remainingVolume)
-        return render_template('profile.html', table=table, **context)
-    else:
-        error = 'Please login to view profile page.'
-        context['status'] = True
-        context['quantity'] = 20
-        context = dict(error=error)
-        return render_template("index.html", **context)
+    orders = get_orders(uid)
+    context = dict(orders=orders,user=user)
+    return render_template('profile.html', **context)
 
 @app.route('/forgotPassword')
 def forgotPassword():
