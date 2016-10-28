@@ -32,9 +32,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 socketio = SocketIO(app)
 
-# For socketio
-@socketio.on('reqPrice')
-def showPrice():
+@socketio.on('my event')
+def showPrice(msg):
+    print("msg:" + msg['data'])
+    sys.stdout.flush()
     while True:
         priceLock.acquire()
         tmpPrice = curPrice
