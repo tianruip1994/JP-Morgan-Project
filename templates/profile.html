@@ -20,10 +20,10 @@
     socket.on('connect', function() {
         socket.emit('reqPrice', {data: 'I\'m connected!'});
     });
-    socket.on('resPrice', function(price)) {
+    socket.on('resPrice', function(price) {
         var p = parseFloat(price);
         document.write(p);
-    }
+    });
 </script>
 
 <!-- {{table}} -->
