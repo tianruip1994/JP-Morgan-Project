@@ -2,6 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask import Flask, session, request, render_template, redirect
 from flask_table import Table, Col
 from datetime import datetime
+from flask.ext.socketio import SocketIO, emit
 
 import threading
 import time
@@ -23,10 +24,25 @@ import time
 import sys
 
 app = Flask(__name__)
+app.debug = True
+app.threaded = True
 app.config['SECRET_KEY'] = 'development key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:12345@localhost/JP_Project' #'mysql://test_user:asease@localhost/hw2'#
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+socketio = SocketIO(app)
+
+# For socketio
+@socketio.on('reqPrice')
+def showPrice():
+    while True:
+        priceLock.acquire()
+        tmpPrice = curPrice
+        priceLock.release()
+        emit('resPrice', tmpPrice)
+        time.sleep(1)
+
+
 
 class User(db.Model):
     __tablename__ = 'User'
@@ -323,4 +339,6 @@ if __name__ == "__main__":
     t = threading.Thread(target=getPrice, args=(), name="getPriceDaemon")
     t.daemon = True
     t.start()
-    app.run(debug=True, threaded=True)
+    #app.run(debug=True, threaded=True)
+    socketio.run(app)
+
