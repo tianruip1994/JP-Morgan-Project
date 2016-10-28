@@ -96,7 +96,7 @@ class Order(db.Model):
     			del self.suborderList[0]
             #-------------- ATTENTION -----------------
             #time interval between each sell
-    		time.sleep(2)
+    		time.sleep(10)
 
 
     #split function goes here---------
@@ -278,7 +278,7 @@ def getOrderDetails(order_id):
     for r in result:
         executedVolume = executedVolume + r.volume
     totalVolume = order.totalVolume
-    process = (executedVolume / totalVolume) * 100
+    process = executedVolume * 100 / totalVolume
     remainingVolume = totalVolume - executedVolume
     return result, process, remainingVolume
 
