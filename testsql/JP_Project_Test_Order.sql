@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 5.7.12, for osx10.9 (x86_64)
 --
--- Host: localhost    Database: JP_Project
+-- Host: localhost    Database: JP_Project_Test
 -- ------------------------------------------------------
 -- Server version	5.7.15
 
@@ -16,29 +16,30 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `user`
+-- Table structure for table `Order`
 --
 
-DROP TABLE IF EXISTS `user`;
+DROP TABLE IF EXISTS `Order`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `user` (
-  `uid` int(11) NOT NULL AUTO_INCREMENT,
-  `username` varchar(45) NOT NULL,
-  `password` varchar(45) NOT NULL,
-  PRIMARY KEY (`uid`),
-  UNIQUE KEY `username_UNIQUE` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=latin1;
+CREATE TABLE `Order` (
+  `order_id` int(11) NOT NULL AUTO_INCREMENT,
+  `totalVolume` int(11) NOT NULL,
+  `uid` int(11) NOT NULL,
+  `time` datetime DEFAULT NULL,
+  PRIMARY KEY (`order_id`),
+  KEY `uid_idx` (`uid`),
+  CONSTRAINT `uid` FOREIGN KEY (`uid`) REFERENCES `Order` (`order_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `user`
+-- Dumping data for table `Order`
 --
 
-LOCK TABLES `user` WRITE;
-/*!40000 ALTER TABLE `user` DISABLE KEYS */;
-INSERT INTO `user` VALUES (1,'jw3107','12345'),(2,'test','12345'),(3,'test1','12345'),(4,'demo','12345'),(5,'test2','12345'),(6,'test3','12345');
-/*!40000 ALTER TABLE `user` ENABLE KEYS */;
+LOCK TABLES `Order` WRITE;
+/*!40000 ALTER TABLE `Order` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Order` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -50,4 +51,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2016-10-27 17:30:38
+-- Dump completed on 2016-11-04 16:33:18

@@ -2,8 +2,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask import Flask, session, request, render_template, redirect
 from flask_table import Table, Col
 from datetime import datetime
-from flask.ext.socketio import SocketIO, emit
-
+from flask_socketio import SocketIO, emit
+from models import User #try to add more import to separate classes
 import threading
 import time
 import urllib2
@@ -34,37 +34,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 socketio = SocketIO(app)
 
-@socketio.on('my event')
-def showPrice(msg):
-    print("msg:" + msg['data'])
-    sys.stdout.flush()
-    while True:
-        priceLock.acquire()
-        tmpPrice = curPrice
-        priceLock.release()
-        emit('resPrice', tmpPrice)
-        time.sleep(1)
-
-
-
-class User(db.Model):
-    __tablename__ = 'user'
-    uid = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(45), unique=True)
-    password = db.Column(db.String(45))
-    #orders = db.relationship('Order', backref='user.uid', lazy='joined')
-
-    def __init__(self, username, password):
-        self.username = username
-        self.password = password
-
-    def __repr__(self):
-        return '<User %r>' % self.username
-
 class Order(db.Model):
     __tablename__ = 'Order'
     order_id = db.Column(db.Integer, primary_key=True)
-    totalVolume = db.Column(db.Integer)
+    totalVolume = db.Column(db.String(64))
     uid = db.Column(db.Integer)#, db.ForeignKey('user.uid'))
     time = db.Column(db.DateTime)
     suborderList = []
@@ -76,27 +49,27 @@ class Order(db.Model):
     def __repr__(self):
         return '<Order %d>' % self.order_id
     def sellOrder(self):
-    	print(self.uid)
-    	print("in sellOrder")
-    	print(len(self.suborderList))
-    	sys.stdout.flush()
-    	while (len(self.suborderList)):
-    		sell = self.suborderList[0].sell()
-    		print("after sell")
-    		sys.stdout.flush()
-    		if (sell >= 0):
-    			del self.suborderList[0]
-    			self.totalVolume = self.totalVolume - sell
-    			numOfSlice = len(self.suborderList);
-    			# TODO what should we do if we cannot sell all of the suborders at last
-    			if (numOfSlice == 0):
-    				numOfSlice = 1
-    			self.suborderList = SplitAlgorithm.tw(Order, numOfSlice)
-    		else:
-    			del self.suborderList[0]
+        print(self.uid)
+        print("in sellOrder")
+        print(len(self.suborderList))
+        sys.stdout.flush()
+        while (len(self.suborderList)):
+            sell = self.suborderList[0].sell()
+            print("after sell")
+            sys.stdout.flush()
+            if (sell >= 0):
+                del self.suborderList[0]
+                self.totalVolume = self.totalVolume - sell
+                numOfSlice = len(self.suborderList);
+                # TODO what should we do if we cannot sell all of the suborders at last
+                if (numOfSlice == 0):
+                    numOfSlice = 1
+                self.suborderList = SplitAlgorithm.tw(Order, numOfSlice)
+            else:
+                del self.suborderList[0]
             #-------------- ATTENTION -----------------
             #time interval between each sell
-    		time.sleep(10)
+            time.sleep(10)
 
 
     #split function goes here---------
@@ -151,16 +124,16 @@ class Suborder(db.Model):
 
 
 class SplitAlgorithm(object):
-	@staticmethod
-	def tw(order, numOfSlice):
-		re = [order.totalVolume/numOfSlice] * (numOfSlice);
-		remind = order.totalVolume % numOfSlice
-		for i in range(0, remind):
-			re[i] = re[i] + 1
-		suborderList = []
-		for i in range(0, numOfSlice):
-			suborderList.append(Suborder(0, datetime.now(), re[i], 0, order.order_id))
-		return suborderList
+    @staticmethod
+    def tw(order, numOfSlice):
+        re = [order.totalVolume/numOfSlice] * (numOfSlice);
+        remind = order.totalVolume % numOfSlice
+        for i in range(0, remind):
+            re[i] = re[i] + 1
+        suborderList = []
+        for i in range(0, numOfSlice):
+            suborderList.append(Suborder(0, datetime.now(), re[i], 0, order.order_id))
+        return suborderList
 
 
 class ItemTable(Table):
@@ -177,6 +150,17 @@ class Item(object):
         self.price = price
 
 new_order = Order(-1,-1,datetime.utcnow())
+
+@socketio.on('my event')
+def showPrice(msg):
+    print("msg:" + msg['data'])
+    sys.stdout.flush()
+    while True:
+        priceLock.acquire()
+        tmpPrice = curPrice
+        priceLock.release()
+        emit('resPrice', tmpPrice)
+        time.sleep(1)
 
 @app.route('/')
 def index():
@@ -370,6 +354,7 @@ def checkAndSell():
             orderLock.release()
             orderTread = threading.Thread(target = tmpOrder.sellOrder(), args = (), name = "newOrder")
             orderTread.start()
+
             orderAvailable = False
 
         time.sleep(1)
