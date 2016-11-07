@@ -1,6 +1,7 @@
 from flask_testing import TestCase
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:12345@localhost/JP_Project_Test'
@@ -19,6 +20,21 @@ class User(db.Model):
 
     def __repr__(self):
         return '<User %r>' % self.username
+
+class Order(db.Model):
+    __tablename__ = 'Order'
+    order_id = db.Column(db.Integer, primary_key=True)
+    totalVolume = db.Column(db.String(64))
+    uid = db.Column(db.Integer)#, db.ForeignKey('user.uid'))
+    time = db.Column(db.DateTime)
+    suborderList = []
+
+    def __init__(self, totalVolume, uid,time):
+        self.time=time
+        self.totalVolume = totalVolume
+        self.uid = uid
+    def __repr__(self):
+        return '<Order %d>' % self.order_id
 
 class exampleTest(TestCase):
     TESTING = True
@@ -59,9 +75,11 @@ class exampleTest(TestCase):
             db.session.commit()
             return password_query
 
-    def submit_order(self, volumn):
-
-
+    def submit_order(self, volume):
+        order=Order(100, 1, datetime.utcnow())
+        db.session.add(user)
+        db.session.commit()
+        assert order in db.session
 
     def test_cases(self):
         user = User('testUser', '12345')

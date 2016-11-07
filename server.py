@@ -32,7 +32,7 @@ app.config['SECRET_KEY'] = 'development key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:12345@localhost/JP_Project' #'mysql://test_user:asease@localhost/hw2'#
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
-socketio = SocketIO(app)
+#socketio = SocketIO(app)
 
 class Order(db.Model):
     __tablename__ = 'Order'
@@ -151,16 +151,16 @@ class Item(object):
 
 new_order = Order(-1,-1,datetime.utcnow())
 
-@socketio.on('my event')
-def showPrice(msg):
-    print("msg:" + msg['data'])
-    sys.stdout.flush()
-    while True:
-        priceLock.acquire()
-        tmpPrice = curPrice
-        priceLock.release()
-        emit('resPrice', tmpPrice)
-        time.sleep(1)
+# @socketio.on('my event')
+# def showPrice(msg):
+#     print("msg:" + msg['data'])
+#     sys.stdout.flush()
+#     while True:
+#         priceLock.acquire()
+#         tmpPrice = curPrice
+#         priceLock.release()
+#         emit('resPrice', tmpPrice)
+#         time.sleep(1)
 
 @app.route('/')
 def index():
@@ -175,6 +175,10 @@ def loginPage():
 def register():
     username = request.form['username']
     password = request.form['password']
+    if len(username) > 45 or len(password) > 45:
+        error = 'The maximum length for username and password is 45 characters.'
+        context = dict(error=error)
+        return render_template("login.html", **context)
     checkUser = User.query.filter_by(username=username).first()
     if checkUser is not None:
         error = 'The username you typed is already used. Please choose another one.'
@@ -206,7 +210,7 @@ def login():
         if user is not None:
             session['uid'] = user.uid
             submit = is_order_submit(user.uid)
-            print(submit)
+            # print(submit)
             context = dict(user=user)
             # return render_template('profile.html', **context)
             if submit:
@@ -227,25 +231,28 @@ def createOrder():
 def submitOrder():
     global orderAvailable
     global new_order
-    quantity = request.form['quantity']
-    print(quantity)
-    print(session['uid'])
-    new_order = Order(quantity,session['uid'],datetime.utcnow())
-    db.session.add(new_order)
-    # split order
-    # new_order.suborders = algo.two()
-    db.session.commit()
+    volume = request.form['volume']
+    if volume.isdigit() and int(volume) > 0 and int(volume) < 2147483647:
+        new_order = Order(volume,session['uid'],datetime.utcnow())
+        db.session.add(new_order)
+        # split order
+        # new_order.suborders = algo.two()
+        db.session.commit()
 
-    #-------------- ATTENTION -----------------
-    #times in which the order will be sold
-    new_order.suborderList = SplitAlgorithm.tw(new_order, 5)
-    for i in range(0, len(new_order.suborderList)):
-    	print(new_order.suborderList[i].volume)
+        #-------------- ATTENTION -----------------
+        #times in which the order will be sold
+        new_order.suborderList = SplitAlgorithm.tw(new_order, 5)
+        # for i in range(0, len(new_order.suborderList)):
+    	   # print(new_order.suborderList[i].volume)
     
-    sys.stdout.flush()
-    # create a new thread for the order
-    orderAvailable = True
-    return redirect('/userProfile')
+        sys.stdout.flush()
+        # create a new thread for the order
+        orderAvailable = True
+        return redirect('/userProfile')
+    else:
+        error='Please enter a positive integer for volume.'
+        context = dict(error=error)
+        return render_template("submitOrder.html", **context)
 
 def getOrderDetails(order_id):
     """Based on the user_ID, get list of orders that belongs to user from the database
@@ -370,6 +377,7 @@ if __name__ == "__main__":
     checkAndSellOrder = threading.Thread(target=checkAndSell, args=(), name="checkAndSellDaemon")
     checkAndSellOrder.daemon = True
     checkAndSellOrder.start()
+    app.run(debug=True)
     #app.run(debug=True, threaded=True)
-    socketio.run(app)
+    #socketio.run(app)
 
