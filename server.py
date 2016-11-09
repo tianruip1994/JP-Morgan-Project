@@ -57,15 +57,21 @@ class Order(db.Model):
             sell = self.suborderList[0].sell()
             print("after sell")
             sys.stdout.flush()
-            if (sell >= 0):
+            #Handle unsold order
+            if (sell == 1):
                 del self.suborderList[0]
-                self.totalVolume = self.totalVolume - sell
                 numOfSlice = len(self.suborderList);
                 # TODO what should we do if we cannot sell all of the suborders at last
                 if (numOfSlice == 0):
                     numOfSlice = 1
-                self.suborderList = SplitAlgorithm.tw(Order, numOfSlice)
+                self.suborderList = SplitAlgorithm.tw(self, numOfSlice)
+            #Handle big order:
+            elif (sell == 2):
+                del self.suborderList[0]
+                continue
+            #Handle sold order
             else:
+                self.totalVolume = self.totalVolume - self.suborderList[0].volume
                 del self.suborderList[0]
             #-------------- ATTENTION -----------------
             #time interval between each sell
@@ -103,24 +109,32 @@ class Suborder(db.Model):
         order_args = (self.volume, tmpPrice - ORDER_DISCOUNT)
         print "Executing 'sell' of {:,} @ {:,}".format(*order_args)
         url   = ORDER.format(random.random(), *order_args)
-        order = json.loads(urllib2.urlopen(url).read())
-
-        # Update the PnL if the order was filled.
-        if order['avg_price'] > 0:
-            price    = order['avg_price']
-            notional = float(price * self.volume)
-            print "Sold {:,} for ${:,}/share, ${:,} notional".format(self.volume, price, notional)
-            self.status = 1
-            self.price = price
+        try:
+            order = json.loads(urllib2.urlopen(url).read())
+        except ValueError:
+            print "order is too big to sell"
+            #big order
+            self.status = 2
         else:
-            print "Unfilled order"
-            self.status = 0
+            # Update the PnL if the order was filled.
+            if order['avg_price'] > 0:
+                price    = order['avg_price']
+                notional = float(price * self.volume)
+                print "Sold {:,} for ${:,}/share, ${:,} notional".format(self.volume, price, notional)
+                #sold order
+                self.status = 0
+                self.price = price
+            else:
+                #unsold order
+                print "Unfilled order"
+                self.status = 1
 
-        self.time = datetime.now()
+            self.time = datetime.now()
+
         db.session.add(self)
         db.session.commit()
         
-        return -self.status
+        return self.status
 
 
 class SplitAlgorithm(object):

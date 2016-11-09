@@ -51,9 +51,9 @@ Remaining Volume: {{remainingVolume}} <br>
             <tr> 
             <td>{{i.suborder_id}}</td>
             {% if not i.status %}
-                <td>Fail</td>
-            {% else %}
                 <td>Success</td>
+            {% else %}
+                <td>Fail</td>
             {% endif %}
             <td>{{i.time}}</td>
             <td>{{i.volume}}</td>
