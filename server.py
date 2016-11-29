@@ -10,6 +10,9 @@ import urllib2
 import json
 import random
 
+# exchange deadline
+exchangeDead = " 17:00:00"
+
 # Server API URLs
 QUERY = "http://localhost:8080/query?id={}"
 ORDER = "http://localhost:8080/order?id={}&side=sell&qty={}&price={}"
@@ -40,6 +43,7 @@ class Order(db.Model):
     totalVolume = db.Column(db.String(64))
     uid = db.Column(db.Integer)#, db.ForeignKey('user.uid'))
     time = db.Column(db.DateTime)
+    sliceNum = 0;
     suborderList = []
 
     def __init__(self, totalVolume, uid,time):
@@ -67,6 +71,9 @@ class Order(db.Model):
                 self.suborderList = SplitAlgorithm.tw(self, numOfSlice)
             #Handle big order:
             elif (sell == 2):
+                self.sliceNum = self.sliceNum * 2;
+                self.suborderList = SplitAlgorithm.tw(self);
+
                 del self.suborderList[0]
                 continue
             #Handle sold order
@@ -75,7 +82,11 @@ class Order(db.Model):
                 del self.suborderList[0]
             #-------------- ATTENTION -----------------
             #time interval between each sell
-            time.sleep(10)
+            #time.sleep(10)
+            endTime = time.strftime("%Y-%m-%d", time.localtime()) + exchangeDead;
+            totalTime = time.mktime(time.strptime(endTime, "%Y-%m-%d %H:%M:%S")) - time.time()
+            interval = totalTime/self.sliceNum
+            time.sleep(interval)
 
 
     #split function goes here---------
@@ -139,8 +150,9 @@ class Suborder(db.Model):
 
 class SplitAlgorithm(object):
     @staticmethod
-    def tw(order, numOfSlice):
-        re = [order.totalVolume/numOfSlice] * (numOfSlice);
+    def tw(order):
+        numOfSlice = order.sliceNum
+        re = [order.totalVolume/numOfSlice] * (numOfSlice)
         remind = order.totalVolume % numOfSlice
         for i in range(0, remind):
             re[i] = re[i] + 1
@@ -255,7 +267,7 @@ def submitOrder():
 
         #-------------- ATTENTION -----------------
         #times in which the order will be sold
-        new_order.suborderList = SplitAlgorithm.tw(new_order, 5)
+        new_order.suborderList = SplitAlgorithm.tw(new_order, new_order.sliceNum);
         # for i in range(0, len(new_order.suborderList)):
     	   # print(new_order.suborderList[i].volume)
     
