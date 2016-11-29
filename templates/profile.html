@@ -61,7 +61,7 @@
                 <th>Total Volume</th>
                 <th >Submitted Time</th>
                 <th>View Details</th>
-                <th>Cancel</th>
+                <th>Cancel Order</th>
             </tr>
         </thead>
         <tbody>
@@ -74,7 +74,10 @@
                 <button name="order_id" type="submit" value={{i[0].order_id}}> Details </button>
                 </form>
             </td>
-            <td>Cancel</td>
+            <td><form action="/orderCancel" method="POST">
+                <button name="order_id" type="submit" value={{i[0].order_id}}> Cancel </button>
+                </form>
+            </td>
             </tr>
            {% endfor %}
        </tbody>

@@ -29,7 +29,7 @@ app = Flask(__name__)
 app.debug = True
 app.threaded = True
 app.config['SECRET_KEY'] = 'development key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:root@localhost/JP_Project' #'mysql://test_user:asease@localhost/hw2'#
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:12345@localhost/JP_Project' #'mysql://test_user:asease@localhost/hw2'#
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 #socketio = SocketIO(app)
@@ -275,7 +275,6 @@ def getOrderDetails(order_id):
     """Based on the user_ID, get list of orders that belongs to user from the database
     expect output: list[dict(information_from_database)]"""
     order = Order.query.filter_by(order_id=order_id).first()
-    print(order.order_id)
     result = Suborder.query.filter_by(order_id=order_id).all()
     executedVolume = 0
     for r in result:
