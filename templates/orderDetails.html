@@ -51,17 +51,17 @@ Remaining Volume: {{remainingVolume}} <br>
             </tr>
         </thead>
         <tbody>
-           {% for i in items %}
+           {% for i in range(itemsLen) %}
             <tr> 
-            <td>{{i.suborder_id}}</td>
-            {% if not i.status %}
+            <td>{{i+1}}</td>
+            {% if not items[i].status %}
                 <td>Success</td>
             {% else %}
                 <td>Fail</td>
             {% endif %}
-            <td>{{i.time}}</td>
-            <td>{{i.volume}}</td>
-            <td>${{i.price}}</td>
+            <td>{{items[i].time}}</td>
+            <td>{{items[i].volume}}</td>
+            <td>${{items[i].price}}</td>
             </tr>
            {% endfor %}
        </tbody>

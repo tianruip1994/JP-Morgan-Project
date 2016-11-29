@@ -29,7 +29,7 @@ app = Flask(__name__)
 app.debug = True
 app.threaded = True
 app.config['SECRET_KEY'] = 'development key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:12345@localhost/JP_Project' #'mysql://test_user:asease@localhost/hw2'#
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:root@localhost/JP_Project' #'mysql://test_user:asease@localhost/hw2'#
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 #socketio = SocketIO(app)
@@ -264,7 +264,7 @@ def submitOrder():
         uid=session['uid']
         user = User.query.filter_by(uid=uid).first()
         items,process, remainingVolume = getOrderDetails(new_order.order_id)
-        context = dict(user=user, items=items,process=process,remainingVolume=remainingVolume)
+        context = dict(user=user, items=items,process=process,remainingVolume=remainingVolume, itemsLen=len(items))
         return render_template('orderDetails.html', **context)
     else:
         error='Please enter a positive integer for volume.'
@@ -275,7 +275,7 @@ def getOrderDetails(order_id):
     """Based on the user_ID, get list of orders that belongs to user from the database
     expect output: list[dict(information_from_database)]"""
     order = Order.query.filter_by(order_id=order_id).first()
-    result = Suborder.query.filter_by(order_id=order_id).all()
+    result = Suborder.query.filter_by(order_id=order_id).order_by(Suborder.time.desc()).all()
     executedVolume = 0
     for r in result:
         executedVolume = executedVolume + r.volume
@@ -285,8 +285,8 @@ def getOrderDetails(order_id):
     return result, process, remainingVolume
 
 def get_orders(uid):
-    orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).order_by(Order.order_id.desc()).all()
-    print(orders[0].order_id)
+    orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).order_by(Order.time.desc()).all()
+    # print(orders[0].order_id)
     return orders
 
 @app.route('/orderDetails', methods=['POST'])
@@ -300,7 +300,7 @@ def orderDetails():
     items,process,remainingVolume = getOrderDetails(order_id)
     table = ItemTable(items)
     if uid is not None:
-        context = dict(user=user, items=items,process=process,remainingVolume=remainingVolume)
+        context = dict(user=user, items=items,process=process,remainingVolume=remainingVolume, itemsLen=len(items))
         return render_template('orderDetails.html', **context)
     else:
         error = 'Please login to view profile page.'
@@ -313,9 +313,12 @@ def userProfile():
     user = User.query.filter_by(uid=uid).first()
     orders = get_orders(uid)
     new_orders = list()
+    i = 1
     for order in orders:
+        print(order.time)
         process = getOrderDetails(order.order_id)[1]
-        new_orders.append((order, process))
+        new_orders.append((order, process, i))
+        i += 1
     context = dict(orders=new_orders,user=user)
     return render_template('profile.html', **context)
 
