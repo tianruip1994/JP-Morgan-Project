@@ -59,7 +59,7 @@
             <tr>
                 <th>Order Status</th>
                 <th>Total Volume</th>
-                <th aria-sort="descending">Submitted Time</th>
+                <th >Submitted Time</th>
                 <th>View Details</th>
                 <th>Cancel</th>
             </tr>
@@ -67,11 +67,11 @@
         <tbody>
            {% for i in orders %}
             <tr> 
-            <td>Success/Fail {{i.order_id}}</td>
-            <td>{{i.totalVolume}}</td>
-            <td>{{i.time}}</td>
+            <td>{{i[1]}}% {{i[0].order_id}}</td>
+            <td>{{i[0].totalVolume}}</td>
+            <td>{{i[0].time}}</td>
             <td><form action="/orderDetails" method="POST">
-                <button name="order_id" type="submit" value={{i.order_id}}> Details </button>
+                <button name="order_id" type="submit" value={{i[0].order_id}}> Details </button>
                 </form>
             </td>
             <td>Cancel</td>

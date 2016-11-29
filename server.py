@@ -29,7 +29,7 @@ app = Flask(__name__)
 app.debug = True
 app.threaded = True
 app.config['SECRET_KEY'] = 'development key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:12345@localhost/JP_Project' #'mysql://test_user:asease@localhost/hw2'#
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:root@localhost/JP_Project' #'mysql://test_user:asease@localhost/hw2'#
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 #socketio = SocketIO(app)
@@ -313,8 +313,11 @@ def userProfile():
     uid = session['uid']
     user = User.query.filter_by(uid=uid).first()
     orders = get_orders(uid)
-    
-    context = dict(orders=orders,user=user)
+    new_orders = list()
+    for order in orders:
+        process = getOrderDetails(order.order_id)[1]
+        new_orders.append((order, process))
+    context = dict(orders=new_orders,user=user)
     return render_template('profile.html', **context)
 
 @app.route('/forgotPassword')
