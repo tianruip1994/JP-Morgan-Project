@@ -190,7 +190,10 @@ new_order = Order(-1,-1,datetime.utcnow())
 
 @app.route('/')
 def index():
-    return render_template("index.html")
+    if len(session) == 0:
+        return render_template("login.html")
+    else:
+        return redirect('/userProfile')
 
 @app.route('/loginpage')
 def loginPage():
@@ -264,8 +267,6 @@ def submitOrder():
         # split order
         # new_order.suborders = algo.two()
         db.session.commit()
-
-        #-------------- ATTENTION -----------------
         #times in which the order will be sold
         new_order.suborderList = SplitAlgorithm.tw(new_order, new_order.sliceNum);
         # for i in range(0, len(new_order.suborderList)):
@@ -274,7 +275,12 @@ def submitOrder():
         sys.stdout.flush()
         # create a new thread for the order
         orderAvailable = True
-        return redirect('/userProfile')
+        #return to order page
+        uid=session['uid']
+        user = User.query.filter_by(uid=uid).first()
+        items,process, remainingVolume = getOrderDetails(new_order.order_id)
+        context = dict(user=user, items=items,process=process,remainingVolume=remainingVolume, itemsLen=len(items))
+        return render_template('orderDetails.html', **context)
     else:
         error='Please enter a positive integer for volume.'
         context = dict(error=error)
@@ -283,14 +289,8 @@ def submitOrder():
 def getOrderDetails(order_id):
     """Based on the user_ID, get list of orders that belongs to user from the database
     expect output: list[dict(information_from_database)]"""
-    # orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).all()#filter(Order.time>=datetime.today()).all()
-    # order_ids=[]
-    # # for o in orders:
-    # #     order_ids.append(o.order_id)
-    # # print(order_ids)
-    # order_ids.append(orders[0].order_id)
     order = Order.query.filter_by(order_id=order_id).first()
-    result = Suborder.query.filter_by(order_id=order_id).all()
+    result = Suborder.query.filter_by(order_id=order_id).order_by(Suborder.time.desc()).all()
     executedVolume = 0
     for r in result:
         executedVolume = executedVolume + r.volume
@@ -300,7 +300,7 @@ def getOrderDetails(order_id):
     return result, process, remainingVolume
 
 def get_orders(uid):
-    orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).all()
+    orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).order_by(Order.time.desc()).all()
     return orders
 
 @app.route('/orderDetails', methods=['POST'])
@@ -314,7 +314,7 @@ def orderDetails():
     items,process,remainingVolume = getOrderDetails(order_id)
     table = ItemTable(items)
     if uid is not None:
-        context = dict(user=user, items=items,process=process,remainingVolume=remainingVolume)
+        context = dict(user=user, items=items,process=process,remainingVolume=remainingVolume, itemsLen=len(items))
         return render_template('orderDetails.html', **context)
     else:
         error = 'Please login to view profile page.'
@@ -326,7 +326,14 @@ def userProfile():
     uid = session['uid']
     user = User.query.filter_by(uid=uid).first()
     orders = get_orders(uid)
-    context = dict(orders=orders,user=user)
+    new_orders = list()
+    i = 1
+    for order in orders:
+        print(order.time)
+        process = getOrderDetails(order.order_id)[1]
+        new_orders.append((order, process, i))
+        i += 1
+    context = dict(orders=new_orders,user=user)
     return render_template('profile.html', **context)
 
 @app.route('/forgotPassword')
