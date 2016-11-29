@@ -178,7 +178,10 @@ new_order = Order(-1,-1,datetime.utcnow())
 
 @app.route('/')
 def index():
-    return render_template("index.html")
+    if len(session) == 0:
+        return render_template("login.html")
+    else:
+        return redirect('/userProfile')
 
 @app.route('/loginpage')
 def loginPage():
@@ -285,7 +288,7 @@ def getOrderDetails(order_id):
     return result, process, remainingVolume
 
 def get_orders(uid):
-    orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).order_by(Order.order_id.desc()).all()
+    orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).order_by(Order.time.desc()).all()
     print(orders[0].order_id)
     return orders
 
