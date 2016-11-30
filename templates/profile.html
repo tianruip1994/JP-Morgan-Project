@@ -71,7 +71,7 @@ window.onload = timedRefresh(1000);
         <thead>
             <tr>
                 <th>No.</th>
-                <th>Order Status</th>
+                <th>Order Progress</th>
                 <th>Total Volume</th>
                 <th >Submitted Time</th>
                 <th>View Details</th>
@@ -81,7 +81,7 @@ window.onload = timedRefresh(1000);
         <tbody>
            {% for i in orders %}
             <tr> 
-            <td>{{i[2]}} {{i[0].order_id}}</td>
+            <td>{{i[2]}}</td>
             <td>{{i[1]}}%</td>
             <td>{{i[0].totalVolume}}</td>
             <td>{{i[0].time}}</td>

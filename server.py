@@ -314,7 +314,8 @@ def submitOrder():
         uid=session['uid']
         user = User.query.filter_by(uid=uid).first()
         items,process, remainingVolume = getOrderDetails(new_order.order_id)
-        context = dict(user=user, items=items,process=process,remainingVolume=remainingVolume, itemsLen=len(items))
+        order_id=new_order.order_id
+        context = dict(user=user, items=items,process=process,remainingVolume=remainingVolume, itemsLen=len(items),order_id=order_id)
         return render_template('orderDetails.html', **context)
     else:
         error='Please enter a positive integer for volume.'
@@ -350,7 +351,7 @@ def orderDetails():
     items,process,remainingVolume = getOrderDetails(order_id)
     table = ItemTable(items)
     if uid is not None:
-        context = dict(user=user, items=items,process=process,remainingVolume=remainingVolume, itemsLen=len(items))
+        context = dict(user=user, items=items,process=process,remainingVolume=remainingVolume, itemsLen=len(items),order_id=order_id)
         return render_template('orderDetails.html', **context)
     else:
         error = 'Please login to view profile page.'
