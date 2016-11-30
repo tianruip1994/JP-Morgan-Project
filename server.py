@@ -24,6 +24,7 @@ ORDER = "http://localhost:8080/order?id={}&side=sell&qty={}&price={}"
 
 curPrice = 0
 orderAvailable = False
+cancel = False
 priceLock = threading.Lock()
 orderLock = threading.Lock()
 
@@ -59,6 +60,7 @@ class Order(db.Model):
     def __repr__(self):
         return '<Order %d>' % self.order_id
     def sellOrder(self):
+        global cancel
         print(self.uid)
         print("in sellOrder")
         print(len(self.suborderList))
@@ -81,10 +83,21 @@ class Order(db.Model):
                 self.suborderList = SplitAlgorithm.tw(self);
                 print "new sliceNum = " + str(self.sliceNum)
                 continue
+
+            elif (sell == 3):
+                del self.suborderList[0]
+                continue
+
             #Handle sold order
             else:
                 self.totalVolume = self.totalVolume - self.suborderList[0].volume
-                del self.suborderList[0]
+                print self.totalVolume
+                if (self.totalVolume <= 0):
+                    break
+                self.sliceNum = self.sliceNum / 2
+                if (self.sliceNum == 0):
+                    self.sliceNum = 1
+                self.suborderList = SplitAlgorithm.tw(self)
             #-------------- ATTENTION -----------------
             #time interval between each sell
             #time.sleep(10)
@@ -92,6 +105,7 @@ class Order(db.Model):
             if (realInterval < 1):
                 realInterval = 1
             time.sleep(realInterval)
+        cancel = False
 
 
     #split function goes here---------
@@ -112,6 +126,7 @@ class Suborder(db.Model):
         self.order_id = order_id
     def sell(self):
         global curPrice
+        global cancel
         # Attempt to execute a sell order.
         print("in sell")
         sys.stdout.flush()
@@ -123,6 +138,15 @@ class Suborder(db.Model):
         priceLock.release()
 
         order_args = (self.volume, tmpPrice - ORDER_DISCOUNT)
+        print cancel
+        if (cancel == True):
+            print "order canceled."
+            self.status = 3
+            self.price = None
+            db.session.add(self)
+            db.session.commit()
+            return self.status
+
         print "Executing 'sell' of {:,} @ {:,}".format(*order_args)
         url   = ORDER.format(random.random(), *order_args)
         try:
@@ -130,6 +154,9 @@ class Suborder(db.Model):
         except ValueError:
             print "order is too big to sell"
             #big order
+            quote = json.loads(urllib2.urlopen(QUERY.format(random.random())).read())
+            print quote
+            self.time = quote['timestamp']
             self.status = 2
         else:
             # Update the PnL if the order was filled.
@@ -144,8 +171,9 @@ class Suborder(db.Model):
                 #unsold order
                 print "Unfilled order"
                 self.status = 1
+                self.price = None
 
-            self.time = datetime.now()
+            self.time = order['timestamp']
 
         db.session.add(self)
         db.session.commit()
@@ -300,7 +328,8 @@ def getOrderDetails(order_id):
     result = Suborder.query.filter_by(order_id=order_id).order_by(Suborder.time.desc()).all()
     executedVolume = 0
     for r in result:
-        executedVolume = executedVolume + r.volume
+        if (r.status == 0):
+            executedVolume = executedVolume + r.volume
     totalVolume = order.totalVolume
     process = executedVolume * 100 / totalVolume
     remainingVolume = totalVolume - executedVolume
@@ -327,6 +356,25 @@ def orderDetails():
         error = 'Please login to view profile page.'
         context = dict(error=error)
         return render_template("login.html", **context)
+
+
+@app.route('/orderCancel', methods=['POST'])
+def ordercancel():
+    global orderAvailable
+    global cancel
+    global new_order
+    uid = session['uid']
+    user = User.query.filter_by(uid=uid).first()
+    # now only one order need to be considered
+    order_id = request.form['order_id']
+    print order_id
+    print new_order.order_id
+    if (int(order_id) == int(new_order.order_id)):
+        orderAvailable = False
+        cancel = True
+        print "---------------------------------------------"
+    return redirect('/userProfile')
+
 
 @app.route('/userProfile')
 def userProfile():
