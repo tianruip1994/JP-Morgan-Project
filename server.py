@@ -11,7 +11,12 @@ import json
 import random
 
 # exchange deadline
-exchangeDead = " 17:00:00"
+#exchangeDead = " 17:00:00"
+#endTime = time.strftime("%Y-%m-%d", time.localtime()) + " 17:00:00";
+endTime = time.strftime("%Y-%m-%d", time.localtime())+ " " + time.strftime("%H:%M:%S", time.localtime(time.time() + 20))
+endTime = time.mktime(time.strptime(endTime, "%Y-%m-%d %H:%M:%S"))
+
+
 
 # Server API URLs
 QUERY = "http://localhost:8080/query?id={}"
@@ -43,7 +48,8 @@ class Order(db.Model):
     totalVolume = db.Column(db.String(64))
     uid = db.Column(db.Integer)#, db.ForeignKey('user.uid'))
     time = db.Column(db.DateTime)
-    sliceNum = 0;
+    sliceNum = 5;
+    interval = 0;
     suborderList = []
 
     def __init__(self, totalVolume, uid,time):
@@ -68,13 +74,12 @@ class Order(db.Model):
                 # TODO what should we do if we cannot sell all of the suborders at last
                 if (numOfSlice == 0):
                     numOfSlice = 1
-                self.suborderList = SplitAlgorithm.tw(self, numOfSlice)
+                self.suborderList = SplitAlgorithm.tw(self)
             #Handle big order:
             elif (sell == 2):
                 self.sliceNum = self.sliceNum * 2;
                 self.suborderList = SplitAlgorithm.tw(self);
-
-                del self.suborderList[0]
+                print "new sliceNum = " + str(self.sliceNum)
                 continue
             #Handle sold order
             else:
@@ -83,10 +88,10 @@ class Order(db.Model):
             #-------------- ATTENTION -----------------
             #time interval between each sell
             #time.sleep(10)
-            endTime = time.strftime("%Y-%m-%d", time.localtime()) + exchangeDead;
-            totalTime = time.mktime(time.strptime(endTime, "%Y-%m-%d %H:%M:%S")) - time.time()
-            interval = totalTime/self.sliceNum
-            time.sleep(interval)
+            realInterval = self.interval
+            if (realInterval < 1):
+                realInterval = 1
+            time.sleep(realInterval)
 
 
     #split function goes here---------
@@ -159,6 +164,8 @@ class SplitAlgorithm(object):
         suborderList = []
         for i in range(0, numOfSlice):
             suborderList.append(Suborder(0, datetime.now(), re[i], 0, order.order_id))
+        order.interval = (endTime - time.time()) / numOfSlice
+        print "interval = " + str(order.interval)
         return suborderList
 
 
@@ -268,7 +275,7 @@ def submitOrder():
         # new_order.suborders = algo.two()
         db.session.commit()
         #times in which the order will be sold
-        new_order.suborderList = SplitAlgorithm.tw(new_order, new_order.sliceNum);
+        new_order.suborderList = SplitAlgorithm.tw(new_order);
         # for i in range(0, len(new_order.suborderList)):
     	   # print(new_order.suborderList[i].volume)
     
