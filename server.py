@@ -297,7 +297,8 @@ def submitOrder():
     global new_order
     volume = request.form['volume']
     if volume.isdigit() and int(volume) > 0 and int(volume) < 2147483647:
-        new_order = Order(volume,session['uid'],datetime.utcnow())
+        quote = json.loads(urllib2.urlopen(QUERY.format(random.random())).read())
+        new_order = Order(volume,session['uid'],quote['timestamp'])
         db.session.add(new_order)
         # split order
         # new_order.suborders = algo.two()
@@ -367,12 +368,9 @@ def ordercancel():
     user = User.query.filter_by(uid=uid).first()
     # now only one order need to be considered
     order_id = request.form['order_id']
-    print order_id
-    print new_order.order_id
     if (int(order_id) == int(new_order.order_id)):
         orderAvailable = False
         cancel = True
-        print "---------------------------------------------"
     return redirect('/userProfile')
 
 
