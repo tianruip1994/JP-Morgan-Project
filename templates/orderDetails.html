@@ -67,7 +67,8 @@ Remaining Volume: {{remainingVolume}}<br>
             </tr>
         </thead>
         <tbody>
-           {% for i in range(itemsLen) %}
+            <div id="test">
+            {% for i in range(itemsLen) %}
             <tr> 
             <td>{{i+1}}</td>
             {% if not items[i].status %}
@@ -82,18 +83,19 @@ Remaining Volume: {{remainingVolume}}<br>
             <td>${{items[i].price}}</td>
             </tr>
            {% endfor %}
+           </div>
        </tbody>
     </table>
 </div>
 </div>
 <script> 
 $(document).ready(function() {
-    // var table = $('#example').DataTable( {
-    //     lengthChange: false,
-    //     buttons: [ 'copy', 'excel', 'pdf', 'colvis' ]
-    // } );
-    // table.buttons().container()
-    //     .appendTo( '#example_wrapper .col-sm-6:eq(0)' );
+     var table = $('#example').DataTable( {
+         lengthChange: false,
+         buttons: [ 'copy', 'excel', 'pdf', 'colvis' ]
+     } );
+     table.buttons().container()
+         .appendTo( '#example_wrapper .col-sm-6:eq(0)' );
 
     setInterval(function(){
         $.ajax({
@@ -103,15 +105,24 @@ $(document).ready(function() {
                 'order_id' : {{order_id}}
             },
             success: function(response) {
-                console.log(response);
+                console.log($("<div />").append(response).find("#example").html());
                 var table = document.getElementById("example")
                 //table.tBodies[0].innerHTML=response.getElementById("example").tBodies[0].innerHTML
                 // table.tBodies[0].innerHTML+="<tr class='even' role='row'><td>1</td><<td>2</td><td><3></td><td>4/tr>"
                 //$( "#example" ).load("hiiiiii");
-                $("#webpage").html(response);
+                //$("#webpage").load(response);
+
+                // var trHTML = '';
+                // $.each(response, function (i, item) {
+                //     trHTML += '<tr><td>' + item.rank + '</td><td>' + item.content + '</td><td>' + item.UID + '</td></tr>';
+                //  });
+                // $('#example').append(trHTML);
+                var result = $("<div />").append(response).find("#example").html();
+                $("example").html(result)
+
             }
         });
-    }, 10000);
+    }, 5000);
 
 } );
 

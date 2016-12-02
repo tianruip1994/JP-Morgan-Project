@@ -2,8 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask import Flask, session, request, render_template, redirect
 from flask_table import Table, Col
 from datetime import datetime
-from flask_socketio import SocketIO, emit
-from models import User #try to add more import to separate classes
+#from flask_socketio import SocketIO, emit
 import threading
 import time
 import urllib2
@@ -42,6 +41,20 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:12345@localhost/JP_Project
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 #socketio = SocketIO(app)
+
+class User(db.Model):
+    __tablename__ = 'User'
+    uid = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(45), unique=True)
+    password = db.Column(db.String(45))
+    #orders = db.relationship('Order', backref='user.uid', lazy='joined')
+
+    def __init__(self, username, password):
+        self.username = username
+        self.password = password
+
+    def __repr__(self):
+        return '<User %r>' % self.username
 
 class Order(db.Model):
     __tablename__ = 'Order'
@@ -359,6 +372,18 @@ def orderDetails():
         context = dict(error=error)
         return render_template("login.html", **context)
 
+@app.route('/tableOrderDetails',methods=['POST'])
+def tableOrderDetails():
+    uid = session['uid']
+    user = User.query.filter_by(uid=uid).first()
+    order_id = request.form['order_id']
+    items,process,remainingVolume = getOrderDetails(order_id)
+    table = ItemTable(items)
+    if uid is not None:
+        context = dict(items=items,process=process,remainingVolume=remainingVolume, itemsLen=len(items),order_id=order_id)
+        return render_template('tableOrderDetails.html', **context)
+    else:
+        return "404 Wrong Page"
 
 @app.route('/orderCancel', methods=['POST'])
 def ordercancel():

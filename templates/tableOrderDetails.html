@@ -1,0 +1,15 @@
+{% for i in range(itemsLen) %}
+    <tr> 
+        <td>{{i+1}}</td>
+        {% if not items[i].status %}
+            <td>Success</td>
+        {% elif items[i].status == 3%}
+            <td>Cancled</td>
+        {% else %}
+            <td>Failed: Too big</td>
+        {% endif %}
+        <td>{{items[i].time}}</td>
+        <td>{{items[i].volume}}</td>
+        <td>${{items[i].price}}</td>
+        </tr>
+{% endfor %}
