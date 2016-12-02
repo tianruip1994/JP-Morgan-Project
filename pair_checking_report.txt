@@ -1,0 +1,23 @@
+Pair1:
+Component: UI(all the files in template folder)
+Original problem of UI: user need to manually refresh the page in order to see the update(In progress)
+Problems founded during meeting: 
+the order of the table should be reversed(Fixed)
+ETF product name should be specified when creating orders(Fixed)
+Reader 1: Jiangfeng Wang
+Recorder 1: Zhekai Xing
+
+
+Pair2:
+Component: The selling algorithm
+Original problem of algorithm:
+Problems founded during meeting: When the trader wants to submit a big order(amount of its suborder > 5000), the system would crash.
+Reason:
+When the suborder failed to be sold, the market would return an error message which our system cannot handle properly(fixed). 
+How to do we fix it:
+	Add exception handling for the error and re-split the order the smaller suborders
+Problem founded during meeting:
+While one order is executing, new submitted orders will be dropped by our system. (not fixed)
+The submitted time of the original orders should be the market’s time(its local time currently) (not fixed)
+Recorder 2: Tianrui Peng
+Reader 2: Tiantian Yin

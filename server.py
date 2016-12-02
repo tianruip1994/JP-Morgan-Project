@@ -1,18 +1,22 @@
-from flask_sqlalchemy import SQLAlchemy 
-from flask import Flask, session, request, render_template, redirect
-from flask_table import Table, Col
-from datetime import datetime
 #from flask_socketio import SocketIO, emit
 import threading
 import time
 import urllib2
 import json
 import random
+import time
+import sys
+from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, session, request, render_template, redirect
+from flask_table import Table, Col
+from datetime import datetime
+
 
 # exchange deadline
 #exchangeDead = " 17:00:00"
 #endTime = time.strftime("%Y-%m-%d", time.localtime()) + " 17:00:00";
-endTime = time.strftime("%Y-%m-%d", time.localtime())+ " " + time.strftime("%H:%M:%S", time.localtime(time.time() + 20))
+endTime = time.strftime("%Y-%m-%d", time.localtime())+ " " + \
+time.strftime("%H:%M:%S", time.localtime(time.time() + 20))
 endTime = time.mktime(time.strptime(endTime, "%Y-%m-%d %H:%M:%S"))
 
 
@@ -29,15 +33,13 @@ orderLock = threading.Lock()
 
 ORDER_DISCOUNT = 5
 
-import threading
-import time
-import sys
+
 
 app = Flask(__name__)
 app.debug = True
 app.threaded = True
 app.config['SECRET_KEY'] = 'development key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:12345@localhost/JP_Project' #'mysql://test_user:asease@localhost/hw2'#
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:12345@localhost/JP_Project'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 #socketio = SocketIO(app)
@@ -62,42 +64,42 @@ class Order(db.Model):
     totalVolume = db.Column(db.String(64))
     uid = db.Column(db.Integer)#, db.ForeignKey('user.uid'))
     time = db.Column(db.DateTime)
-    sliceNum = 5;
-    interval = 0;
+    sliceNum = 5
+    interval = 0
     suborderList = []
 
-    def __init__(self, totalVolume, uid,time):
-        self.time=time
+    def __init__(self, totalVolume, uid, curtime):
+        self.time = curtime
         self.totalVolume = totalVolume
         self.uid = uid
     def __repr__(self):
         return '<Order %d>' % self.order_id
     def sellOrder(self):
         global cancel
-        print(self.uid)
-        print("in sellOrder")
-        print(len(self.suborderList))
+        print self.uid
+        print "in sellOrder"
+        print len(self.suborderList)
         sys.stdout.flush()
-        while (len(self.suborderList)):
+        while len(self.suborderList):
             sell = self.suborderList[0].sell()
-            print("after sell")
+            print "after sell"
             sys.stdout.flush()
             #Handle unsold order
-            if (sell == 1):
+            if sell == 1:
                 del self.suborderList[0]
-                numOfSlice = len(self.suborderList);
+                numOfSlice = len(self.suborderList)
                 # TODO what should we do if we cannot sell all of the suborders at last
-                if (numOfSlice == 0):
+                if numOfSlice == 0:
                     numOfSlice = 1
                 self.suborderList = SplitAlgorithm.tw(self)
             #Handle big order:
-            elif (sell == 2):
-                self.sliceNum = self.sliceNum * 2;
-                self.suborderList = SplitAlgorithm.tw(self);
+            elif sell == 2:
+                self.sliceNum = self.sliceNum * 2
+                self.suborderList = SplitAlgorithm.tw(self)
                 print "new sliceNum = " + str(self.sliceNum)
                 continue
 
-            elif (sell == 3):
+            elif sell == 3:
                 del self.suborderList[0]
                 continue
 
@@ -105,24 +107,24 @@ class Order(db.Model):
             else:
                 self.totalVolume = self.totalVolume - self.suborderList[0].volume
                 print self.totalVolume
-                if (self.totalVolume <= 0):
+                if self.totalVolume <= 0:
                     break
                 self.sliceNum = self.sliceNum / 2
-                if (self.sliceNum == 0):
+                if self.sliceNum == 0:
                     self.sliceNum = 1
                 self.suborderList = SplitAlgorithm.tw(self)
             #-------------- ATTENTION -----------------
             #time interval between each sell
             #time.sleep(10)
             realInterval = self.interval
-            if (realInterval < 1):
+            if realInterval < 1:
                 realInterval = 1
             time.sleep(realInterval)
         cancel = False
 
-
-    #split function goes here---------
-
+"""
+split function goes here---------
+"""
 class Suborder(db.Model):
     __tablename__ = 'Suborder'
     suborder_id = db.Column(db.Integer, primary_key=True)
@@ -131,9 +133,9 @@ class Suborder(db.Model):
     volume = db.Column(db.Float)
     price = db.Column(db.Float)
     order_id = db.Column(db.Integer)#, db.ForeignKey('order.order_id'))
-    def __init__(self, status, time, volume, price, order_id):
+    def __init__(self, status, curtime, volume, price, order_id):
         self.status = status
-        self.time = time
+        self.time = curtime
         self.volume = volume
         self.price = price
         self.order_id = order_id
@@ -141,7 +143,7 @@ class Suborder(db.Model):
         global curPrice
         global cancel
         # Attempt to execute a sell order.
-        print("in sell")
+        print "in sell"
         sys.stdout.flush()
 
         #-------------- ATTENTION -----------------
@@ -152,7 +154,7 @@ class Suborder(db.Model):
 
         order_args = (self.volume, tmpPrice - ORDER_DISCOUNT)
         print cancel
-        if (cancel == True):
+        if cancel == True:
             print "order canceled."
             self.status = 3
             self.price = None
@@ -161,7 +163,7 @@ class Suborder(db.Model):
             return self.status
 
         print "Executing 'sell' of {:,} @ {:,}".format(*order_args)
-        url   = ORDER.format(random.random(), *order_args)
+        url = ORDER.format(random.random(), *order_args)
         try:
             order = json.loads(urllib2.urlopen(url).read())
         except ValueError:
@@ -174,9 +176,10 @@ class Suborder(db.Model):
         else:
             # Update the PnL if the order was filled.
             if order['avg_price'] > 0:
-                price    = order['avg_price']
+                price = order['avg_price']
                 notional = float(price * self.volume)
-                print "Sold {:,} for ${:,}/share, ${:,} notional".format(self.volume, price, notional)
+                print "Sold {:,} for ${:,}/share, ${:,} notional".format(self.volume,\
+                    price, notional)
                 #sold order
                 self.status = 0
                 self.price = price
@@ -190,10 +193,12 @@ class Suborder(db.Model):
 
         db.session.add(self)
         db.session.commit()
-        
+
         return self.status
 
-
+"""
+Use an algorithm to split order 
+"""
 class SplitAlgorithm(object):
     @staticmethod
     def tw(order):
@@ -223,7 +228,7 @@ class Item(object):
         self.quantity = volume
         self.price = price
 
-new_order = Order(-1,-1,datetime.utcnow())
+new_order = Order(-1, -1, datetime.utcnow())
 
 # @socketio.on('my event')
 # def showPrice(msg):
@@ -273,7 +278,8 @@ def is_order_submit(uid):
     """Based on the user_ID, check whether user has order or not
     return true is user had submitted order"""
     #need to be filled
-    orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).first()
+    orders = Order.query.join(User, User.uid ==\
+        Order.uid).filter_by(uid=uid).first()
     return not orders == None
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -296,7 +302,8 @@ def login():
                 return render_template("submitOrder.html")
                 # return redirect('/userProfile')
         else:
-            error = 'Oops! We cannot find this combination of username and password in our database.'
+            error = 'Oops! We cannot find this combination of \
+            username and password in our database.'
             context = dict(error=error)
             return render_template("login.html", **context)
 
@@ -311,28 +318,29 @@ def submitOrder():
     volume = request.form['volume']
     if volume.isdigit() and int(volume) > 0 and int(volume) < 2147483647:
         quote = json.loads(urllib2.urlopen(QUERY.format(random.random())).read())
-        new_order = Order(volume,session['uid'],quote['timestamp'])
+        new_order = Order(volume, session['uid'], quote['timestamp'])
         db.session.add(new_order)
         # split order
         # new_order.suborders = algo.two()
         db.session.commit()
         #times in which the order will be sold
-        new_order.suborderList = SplitAlgorithm.tw(new_order);
+        new_order.suborderList = SplitAlgorithm.tw(new_order)
         # for i in range(0, len(new_order.suborderList)):
     	   # print(new_order.suborderList[i].volume)
-    
+
         sys.stdout.flush()
         # create a new thread for the order
         orderAvailable = True
         #return to order page
-        uid=session['uid']
+        uid = session['uid']
         user = User.query.filter_by(uid=uid).first()
-        items,process, remainingVolume = getOrderDetails(new_order.order_id)
-        order_id=new_order.order_id
-        context = dict(user=user, items=items,process=process,remainingVolume=remainingVolume, itemsLen=len(items),order_id=order_id)
+        items, process, remainingVolume = getOrderDetails(new_order.order_id)
+        order_id = new_order.order_id
+        context = dict(user=user, items=items, process=process, remainingVolume=remainingVolume,\
+            itemsLen=len(items), order_id=order_id)
         return render_template('orderDetails.html', **context)
     else:
-        error='Please enter a positive integer for volume.'
+        error = 'Please enter a positive integer for volume.'
         context = dict(error=error)
         return render_template("submitOrder.html", **context)
 
@@ -343,7 +351,7 @@ def getOrderDetails(order_id):
     result = Suborder.query.filter_by(order_id=order_id).order_by(Suborder.time.desc()).all()
     executedVolume = 0
     for r in result:
-        if (r.status == 0):
+        if r.status == 0:
             executedVolume = executedVolume + r.volume
     totalVolume = order.totalVolume
     process = executedVolume * 100 / totalVolume
@@ -351,7 +359,8 @@ def getOrderDetails(order_id):
     return result, process, remainingVolume
 
 def get_orders(uid):
-    orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).order_by(Order.time.desc()).all()
+    orders = Order.query.join(User, User.uid == \
+        Order.uid).filter_by(uid=uid).order_by(Order.time.desc()).all()
     return orders
 
 @app.route('/orderDetails', methods=['POST'])
@@ -362,10 +371,11 @@ def orderDetails():
     # orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).first()
     # order_id = orders.order_id
     # result = Suborder.query.filter_by(order_id=order_id).all()
-    items,process,remainingVolume = getOrderDetails(order_id)
+    items, process, remainingVolume = getOrderDetails(order_id)
     table = ItemTable(items)
     if uid is not None:
-        context = dict(user=user, items=items,process=process,remainingVolume=remainingVolume, itemsLen=len(items),order_id=order_id)
+        context = dict(user=user, items=items, process=process, remainingVolume=remainingVolume,\
+            itemsLen=len(items), order_id=order_id)
         return render_template('orderDetails.html', **context)
     else:
         error = 'Please login to view profile page.'
@@ -394,7 +404,7 @@ def ordercancel():
     user = User.query.filter_by(uid=uid).first()
     # now only one order need to be considered
     order_id = request.form['order_id']
-    if (int(order_id) == int(new_order.order_id)):
+    if int(order_id) == int(new_order.order_id):
         orderAvailable = False
         cancel = True
     return redirect('/userProfile')
@@ -408,11 +418,11 @@ def userProfile():
     new_orders = list()
     i = 1
     for order in orders:
-        print(order.time)
+        print order.time
         process = getOrderDetails(order.order_id)[1]
         new_orders.append((order, process, i))
         i += 1
-    context = dict(orders=new_orders,user=user)
+    context = dict(orders=new_orders, user=user)
     return render_template('profile.html', **context)
 
 @app.route('/forgotPassword')
@@ -426,7 +436,8 @@ def modifyPassword():
     password = request.form['password']
     user_query = User.query.filter_by(username=username).first()
     if user_query is None:
-        error = 'Oops! We cannot find this username in our database. Make sure the username is registered.'
+        error = 'Oops! We cannot find this username in our database. \
+        Make sure the username is registered.'
         context = dict(error=error)
         return render_template("login.html", **context)
     else:
@@ -463,7 +474,7 @@ def getPrice():
 
 def checkAndSell():
     print "check and sell order"
-    
+
     global orderAvailable
     global new_order
     while True:
@@ -471,7 +482,7 @@ def checkAndSell():
             orderLock.acquire()
             tmpOrder = new_order
             orderLock.release()
-            orderTread = threading.Thread(target = tmpOrder.sellOrder(), args = (), name = "newOrder")
+            orderTread = threading.Thread(target=tmpOrder.sellOrder(), args=(), name="newOrder")
             orderTread.start()
 
             orderAvailable = False
@@ -492,4 +503,3 @@ if __name__ == "__main__":
     app.run(debug=True)
     #app.run(debug=True, threaded=True)
     #socketio.run(app)
-
