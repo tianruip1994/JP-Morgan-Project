@@ -382,19 +382,6 @@ def orderDetails():
         context = dict(error=error)
         return render_template("login.html", **context)
 
-@app.route('/tableOrderDetails',methods=['POST'])
-def tableOrderDetails():
-    uid = session['uid']
-    user = User.query.filter_by(uid=uid).first()
-    order_id = request.form['order_id']
-    items,process,remainingVolume = getOrderDetails(order_id)
-    table = ItemTable(items)
-    if uid is not None:
-        context = dict(items=items,process=process,remainingVolume=remainingVolume, itemsLen=len(items),order_id=order_id)
-        return render_template('tableOrderDetails.html', **context)
-    else:
-        return "404 Wrong Page"
-
 @app.route('/orderCancel', methods=['POST'])
 def ordercancel():
     global orderAvailable

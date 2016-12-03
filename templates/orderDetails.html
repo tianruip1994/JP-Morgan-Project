@@ -48,7 +48,7 @@ window.onload = timedRefresh(3000);
     <link rel="stylesheet" type="text/css" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.12/css/dataTables.bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/1.2.2/css/buttons.bootstrap.min.css">
-<div class="container">
+<div class="container" id="progress">
 <a class="btn btn-lg btn-default" href="/userProfile">To Order Summary Page</a>
 <p class="lead" style="font-size:30px">Progress: {{process}}%<br>
 Remaining Volume: {{remainingVolume}}<br>
@@ -67,7 +67,6 @@ Remaining Volume: {{remainingVolume}}<br>
             </tr>
         </thead>
         <tbody>
-            <div id="test">
             {% for i in range(itemsLen) %}
             <tr> 
             <td>{{i+1}}</td>
@@ -83,7 +82,6 @@ Remaining Volume: {{remainingVolume}}<br>
             <td>${{items[i].price}}</td>
             </tr>
            {% endfor %}
-           </div>
        </tbody>
     </table>
 </div>
@@ -105,21 +103,26 @@ $(document).ready(function() {
                 'order_id' : {{order_id}}
             },
             success: function(response) {
-                console.log($("<div />").append(response).find("#example").html());
+                var result = $("<div />").append(response).find("#example").html()
                 var table = document.getElementById("example")
+                console.log(result)
+                //table.tBodies[0].innerHTML=result
+                table.innerHTML=result
+                //table.deleteRow(0);
+
+                var op = $("<div />").append(response).find("#progress").html()
+                var orderProgress = document.getElementById("progress")
+                orderProgress.innerHTML=op
                 //table.tBodies[0].innerHTML=response.getElementById("example").tBodies[0].innerHTML
                 // table.tBodies[0].innerHTML+="<tr class='even' role='row'><td>1</td><<td>2</td><td><3></td><td>4/tr>"
-                //$( "#example" ).load("hiiiiii");
                 //$("#webpage").load(response);
-
                 // var trHTML = '';
                 // $.each(response, function (i, item) {
                 //     trHTML += '<tr><td>' + item.rank + '</td><td>' + item.content + '</td><td>' + item.UID + '</td></tr>';
                 //  });
                 // $('#example').append(trHTML);
-                var result = $("<div />").append(response).find("#example").html();
-                $("example").html(result)
-
+                //var result = $("<div />").append(response).find("#example").html();
+                //$("webpage").html(response)
             }
         });
     }, 5000);
