@@ -9,6 +9,4 @@ install:
   -pip install MYSQL-python
   -pip install flask-socketio
 # command to run tests
-script: 
-server_simulator
-unit_test
+script: server_simulator unit_test
