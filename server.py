@@ -61,6 +61,7 @@ class Order(db.Model):
     totalVolume = db.Column(db.String(64))
     uid = db.Column(db.Integer)#, db.ForeignKey('user.uid'))
     time = db.Column(db.DateTime)
+    status = db.Column(db.Integer)
     sliceNum = 5
     interval = 0
     suborderList = []
@@ -113,7 +114,7 @@ class Order(db.Model):
             #time.sleep(10)
             realInterval = self.interval
             if realInterval < 1:
-                realInterval = 1
+                realInterval = 5
             time.sleep(realInterval)
         cancel = False
 
@@ -315,7 +316,7 @@ def submitOrder():
         #return to order page
         uid = session['uid']
         user = User.query.filter_by(uid=uid).first()
-        items, process, remainingVolume = getOrderDetails(new_order.order_id)
+        items, process, remainingVolume,avgPrice = getOrderDetails(new_order.order_id)
         order_id = new_order.order_id
         context = dict(user=user, items=items, process=process, remainingVolume=remainingVolume,\
             itemsLen=len(items), order_id=order_id)
@@ -331,13 +332,20 @@ def getOrderDetails(order_id):
     order = Order.query.filter_by(order_id=order_id).first()
     result = Suborder.query.filter_by(order_id=order_id).order_by(Suborder.time.desc()).all()
     executedVolume = 0
+    totalPrice = 0
     for r in result:
         if r.status == 0:
             executedVolume = executedVolume + r.volume
+            totalPrice = totalPrice + r.price * r.volume
     totalVolume = order.totalVolume
     process = executedVolume * 100 / totalVolume
     remainingVolume = totalVolume - executedVolume
-    return result, process, remainingVolume
+    if executedVolume != 0:
+        avgPrice = totalPrice / executedVolume
+        avgPrice = round(avgPrice, 2)
+    else:
+        avgPrice = 0
+    return result, process, remainingVolume, avgPrice
 
 def get_orders(uid):
     orders = Order.query.join(User, User.uid == \
@@ -349,7 +357,7 @@ def orderDetails():
     uid = session['uid']
     user = User.query.filter_by(uid=uid).first()
     order_id = request.form['order_id']
-    items, process, remainingVolume = getOrderDetails(order_id)
+    items, process, remainingVolume, avgPrice = getOrderDetails(order_id)
     table = ItemTable(items)
     if uid is not None:
         context = dict(user=user, items=items, process=process, remainingVolume=remainingVolume,\
@@ -369,6 +377,10 @@ def ordercancel():
     user = User.query.filter_by(uid=uid).first()
     # now only one order need to be considered
     order_id = request.form['order_id']
+    order = Order.query.filter_by(order_id=order_id).first()
+    if order is not None:
+        order.status = 3
+        db.session.commit()
     if int(order_id) == int(new_order.order_id):
         orderAvailable = False
         cancel = True
@@ -383,9 +395,8 @@ def userProfile():
     new_orders = list()
     i = 1
     for order in orders:
-        print order.time
-        process = getOrderDetails(order.order_id)[1]
-        new_orders.append((order, process, i))
+        items, process, remainingVolume, avgPrice = getOrderDetails(order.order_id)
+        new_orders.append((order, process, i, avgPrice))
         i += 1
     context = dict(orders=new_orders, user=user)
     return render_template('profile.html', **context)
