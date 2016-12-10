@@ -1,13 +1,15 @@
 language: python
 python:
-	-"2.7"
+  -"2.7"
 
 # command to install dependencies
 install: 
-	-pip install Flask-SQLAlchemy
-	-pip install Flask
-	-pip install MYSQL-python
-	-pip install flask-socketio
+  -pip install Flask-SQLAlchemy
+  -pip install Flask
+  -pip install MYSQL-python
+  -pip install flask-socketio
 # command to run tests
-script: server_simulator.py
-		unit_test.py
+script: server_simulator unit_test
+
+sudo: required
+dist: trusty
