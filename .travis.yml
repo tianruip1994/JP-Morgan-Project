@@ -22,7 +22,7 @@ before_script:
     price decimal(5,2) DEFAULT NULL,
     order_id int(11) DEFAULT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;'"
- - sh -c "mysql -e 'CREATE TABLE JP_Project.user(
+ - sh -c "mysql -e 'CREATE TABLE JP_Project.user (
     `uid` INT(11) NOT NULL AUTO_INCREMENT,
     `username` VARCHAR(45) NOT NULL,
     `password` VARCHAR(45) NOT NULL,
