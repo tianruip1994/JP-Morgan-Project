@@ -3,7 +3,7 @@ python:
   - "2.7"
   
 # command to install dependencies
-install: pip install Flask-SQLAlchemy Flask MYSQL-python flask-socketio Flask-Table dateutil
+install: pip install Flask-SQLAlchemy Flask MYSQL-python flask-socketio Flask-Table python-dateutil
 
 before_script:
 - mysql -e "CREATE DATABASE myapp_test"
