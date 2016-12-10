@@ -1,5 +1,5 @@
 test:
   adapter: mysql2
-  database: myapp_test
+  database: JP_Project
   username: root
   encoding: utf8
