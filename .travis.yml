@@ -10,8 +10,8 @@ before_script:
 
 # command to run tests
 script: 
-- python server_simulator.py
-- python unit_test.py
+- python server_simulator.py & coverage run unit_test.py
+- coverage report
 
 services:
   - mysql
