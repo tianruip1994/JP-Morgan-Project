@@ -71,19 +71,29 @@ window.onload = timedRefresh(1000);
         <thead>
             <tr>
                 <th>No.</th>
+                <th>Order Status</th>
                 <th>Order Progress</th>
                 <th>Total Volume</th>
+                <th>Average Price</th>
                 <th >Submitted Time</th>
                 <th>View Details</th>
                 <th>Cancel Order</th>
             </tr>
         </thead>
         <tbody>
-           {% for i in orders %}
+            {% for i in orders %}
             <tr> 
             <td>{{i[2]}}</td>
+            {% if i[1] >= 100 %}
+            <td><font color="green">Completed</font></th>
+            {% elif i[0].status == 3 %}
+            <td><font color="red">Cancelled</font></th>
+            {% else %}
+            <td><font color="orange">In Progress</font></th>
+            {% endif %}
             <td>{{i[1]}}%</td>
             <td>{{i[0].totalVolume}}</td>
+            <td>${{i[3]}}</td>
             <td>{{i[0].time}}</td>
             <td><form action="/orderDetails" method="POST">
                 <button name="order_id" type="submit" value={{i[0].order_id}}> Details </button>
