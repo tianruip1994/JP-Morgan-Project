@@ -10,6 +10,7 @@ class ServerTestCase(unittest.TestCase):
         self.db_fd, server.app.config['DATABASE'] = tempfile.mkstemp()
         server.app.config['TESTING'] = True
         self.app = server.app.test_client()
+        flaskr.init_db()
 
     def tearDown(self):
         os.close(self.db_fd)
