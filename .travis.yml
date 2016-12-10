@@ -1,12 +1,18 @@
 language: python
 python:
-  -"2.7"
+  - "2.7"
 
+before_install: 
+  - mysql -e 'CREATE DATABSE myapp_test"
+  
 # command to install dependencies
-install: 
-  -pip install Flask-SQLAlchemy
-  -pip install Flask
-  -pip install MYSQL-python
-  -pip install flask-socketio
+install: pip install Flask-SQLAlchemy Flask MYSQL-python flask-socketio Flask-Table
 # command to run tests
-script: server_simulator unit_test
+script: 
+- python server_simulator.py
+- python unit_test.py
+
+services:
+  - mysql
+sudo: required
+dist: trusty

@@ -24,10 +24,10 @@ class ServerTestCase(unittest.TestCase):
     def logout(self):
         return self.app.get('/signout', follow_redirects=True)
 
-    # test need to start with "test_"
-    def test_main_page(self):
-        rv = self.app.get('/')
-        assert b'Welcome! This is main page' in rv.data
+    def getOrderDetails(self, order_id):
+        return self.app.post('/orderDetails', data=dict(
+            order_id=order_id
+        ), follow_redirects=True)
 
     def test_register(self):
         rv=self.app.post('/register',data=dict(username='test',password='12345'), follow_redirects=True)
@@ -36,13 +36,13 @@ class ServerTestCase(unittest.TestCase):
         assert 'successfully registered' in rv.data
         rv=self.app.post('/register',data=dict(username='test_abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz',
                                                 password='12345'), follow_redirects=True)
-        assert 'successfully registered' in rv.data
+        assert 'The maximum length' in rv.data
 
     def test_login_logout(self):
-        rv = self.login('test', '12345')
-        assert 'Welcome test!' in rv.data
+        rv = self.login('test_register', '12345')
+        assert 'Welcome' in rv.data
         rv = self.logout()
-        assert 'Welcome! This is main page' in rv.data
+        #assert 'Welcome! This is main page' in rv.data
         rv = self.login('test','123')
         assert 'Oops! We cannot find this combination' in rv.data
 
@@ -59,6 +59,17 @@ class ServerTestCase(unittest.TestCase):
         assert 'positive integer' in rv.data
         rv = self.app.post('/submitOrder', data=dict(volume='2147483648'), follow_redirects=True)
         assert 'positive integer' in rv.data
+
+    def test_order_details(self):
+        self.login('test','12345')
+        rv = self.app.post('/orderDetails',data=dict(order_id=98), follow_redirects=True)
+        assert '98' in rv.data
+
+    def test_forgot_password(self):
+        rv = self.app.post('/modifyPassword', data=dict(username='test1', password='123456'), follow_redirects=True)
+        assert 'successfully' in rv.data
+        rv = self.app.post('/modifyPassword', data=dict(username='test_r', password='123456'), follow_redirects=True)
+        assert 'Oops!' in rv.data
 
 if __name__ == '__main__':
     unittest.main()
