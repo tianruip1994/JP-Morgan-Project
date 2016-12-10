@@ -1,0 +1,152 @@
+Jiangfeng Wang (51):
+      Initial files
+      Add sql files
+      Modified server.py
+      Edited README to include package
+      Modified db connection
+      database table creation
+      Database sql files
+      Added join query to main page
+      Change server
+      edited server.py
+      Merge branch 'master' of https://github.com/SwaggersAse/JP-Morgan-Project
+      Added js and css files
+      Moved files to correct folder
+      Modified server file to get it working
+      Add submit order page
+      server.py to merge
+      Merge branch 'master' of https://github.com/SwaggersAse/JP-Morgan-Project
+      Deal with multiple joins
+      merge conflict
+      Merge branch 'master' of https://github.com/SwaggersAse/JP-Morgan-Project
+      UI Change
+      Added feature: user can create multiple orders;database changed
+      Resolved process not updating issue; UI changes
+      Added unittest cases
+      Unit testing
+      Order creation slide back to order detail page
+      Merge branch 'master' of https://github.com/SwaggersAse/JP-Morgan-Project
+      Merged UI
+      Remove index html
+      merge conflict
+      modified UI
+      auto refresh table
+      Merge branch 'master' of https://github.com/SwaggersAse/JP-Morgan-Project
+      Push for test
+      refresh table
+      Merge branch 'master' of https://github.com/SwaggersAse/JP-Morgan-Project
+      Table auto refresh done
+      cleanup
+      build ci
+      Merge branch 'master' of https://github.com/SwaggersAse/JP-Morgan-Project
+      test ci
+      test ci
+      add test cases
+      Merge branch 'master' of https://github.com/SwaggersAse/JP-Morgan-Project
+      add test cases for coverage
+      Merge branch 'master' of https://github.com/SwaggersAse/JP-Morgan-Project
+      add getprice
+      Merge branch 'master' of https://github.com/SwaggersAse/JP-Morgan-Project
+      Merge branch 'master' of https://github.com/SwaggersAse/JP-Morgan-Project
+      Calculated average price for each order; add order status
+      Merge branch 'master' of https://github.com/SwaggersAse/JP-Morgan-Project
+
+Kevin Xing (12):
+      init
+      add class Algorithm, add SellOrder
+      merge server.py
+      fix bugs for order sell
+      add order_id in suborder
+      add order_id in suborder
+      add order_id
+      test socketio
+      Merge branch 'master' of github.com:SwaggersAse/JP-Morgan-Project
+      socket io test
+      show price test
+      show price on current page
+
+KevinXing (5):
+      fix bug for ubuntu
+      1. change volumn to bigint; 2. add unit_test
+      re calculate suborder
+      Merge branch 'master' of github.com:SwaggersAse/JP-Morgan-Project
+      handle big order
+
+Tiantian Yin (9):
+      get price from JP-Server
+      Merge branch 'master' of github.com:SwaggersAse/JP-Morgan-Project
+      fixed a bug
+      add sell in suborder
+      fix bugs
+      Merge branch 'master' of github.com:SwaggersAse/JP-Morgan-Project
+      fix bugs
+      version 1.0
+      add features:redirect to user profile after submmit/ display current price
+
+TiantianYin (7):
+      Merge branch 'socketio'
+      update README
+      handle big order
+      cancel order
+      time fixed
+      pylint
+      Merge branch 'master' of github.com:SwaggersAse/JP-Morgan-Project
+
+tianruip1994 (56):
+      Initial commit
+      Add files via upload
+      Add files via upload
+      Add files via upload
+      Add files via upload
+      Add files via upload
+      Update README.md
+      Update README.md
+      Update README.md
+      fix auto slide
+      Merge pull request #28 from tianruip1994/master
+      add progress
+      Merge pull request #29 from tianruip1994/master
+      add ETF name
+      Merge pull request #30 from tianruip1994/master
+      reverse order
+      auto refresh
+      Add files via upload
+      Add files via upload
+      Add files via upload
+      test ci
+      Update .travis.yml
+      Update .travis.yml
+      Update .travis.yml
+      add run.sh for ci
+      Update .travis.yml
+      Update .travis.yml
+      Update .travis.yml
+      Update .travis.yml
+      delete run.sh
+      Update .travis.yml
+      Update .travis.yml
+      Update .travis.yml
+      Update .travis.yml
+      Update .travis.yml
+      Merge branch 'master' of https://github.com/SwaggersAse/JP-Morgan-Project
+      add database to CI
+      Update .travis.yml
+      Update .travis.yml
+      Update .travis.yml
+      Update .travis.yml
+      Update .travis.yml
+      Update .travis.yml
+      Update .travis.yml
+      Update .travis.yml
+      Update database.yml
+      Update database.yml
+      solve test database ab
+      Merge branch 'master' of https://github.com/SwaggersAse/JP-Morgan-Project
+      import flaskr
+      import flaskr
+      Update server.py
+      import flaskr
+      Merge branch 'master' of https://github.com/SwaggersAse/JP-Morgan-Project
+      Update .travis.yml
+      import flaskr
+
