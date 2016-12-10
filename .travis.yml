@@ -6,7 +6,7 @@ python:
 install: pip install Flask-SQLAlchemy Flask MYSQL-python flask-socketio Flask-Table python-dateutil coverage
 
 before_script:
-- mysql -e "CREATE DATABASE myapp_test"
+- mysql -e "CREATE DATABASE JP_Project"
 
 # command to run tests
 script: 
