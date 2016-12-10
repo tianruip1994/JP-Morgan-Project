@@ -2,6 +2,7 @@ import os
 import server
 import unittest
 import tempfile
+import flaskr
 
 class ServerTestCase(unittest.TestCase):
 
