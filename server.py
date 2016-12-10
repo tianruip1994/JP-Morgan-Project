@@ -418,28 +418,8 @@ def signout():
     session.pop('uid', None)
     return redirect('/')
 
-
-def getPrice():
-    print "start get price from JP-server"
-    # get price from JP-server continously.
-    global curPrice
-    while True:
-
-        # Query the price once every 1 seconds.
-        quote = json.loads(urllib2.urlopen(QUERY.format(random.random())).read())
-        priceLock.acquire()
-        curPrice = float(quote['top_bid']['price'])
-        priceLock.release()
-        #print "Quoted at %s" % curPrice
-        sys.stdout.flush()
-
-        time.sleep(1)
-
-    print "stop get price from JP-server"
-
 def checkAndSell():
     print "check and sell order"
-
     global orderAvailable
     global new_order
     while True:
@@ -449,13 +429,9 @@ def checkAndSell():
             orderLock.release()
             orderTread = threading.Thread(target=tmpOrder.sellOrder(), args=(), name="newOrder")
             orderTread.start()
-
             orderAvailable = False
-
         time.sleep(1)
-
     print "stop check and sell order"
-
 
 
 if __name__ == "__main__":
