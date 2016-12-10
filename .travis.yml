@@ -10,3 +10,6 @@ install:
   -pip install flask-socketio
 # command to run tests
 script: server_simulator unit_test
+
+sudo: required
+dist: trusty
