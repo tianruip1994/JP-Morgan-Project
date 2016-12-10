@@ -3,7 +3,7 @@ python:
   - "2.7"
 
 # command to install dependencies
-install: pip install Flask-SQLAlchemy Flask MYSQL-python flask-socketio
+install: pip install Flask-SQLAlchemy Flask MYSQL-python flask-socketio Flask-Table
 # command to run tests
 script: 
 - python server_simulator.py
