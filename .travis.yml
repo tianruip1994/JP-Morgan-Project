@@ -6,8 +6,8 @@ python:
 install: pip install Flask-SQLAlchemy Flask MYSQL-python flask-socketio
 # command to run tests
 script: 
-python server_simulator.py
-python unit_test.py
+- python server_simulator.py
+- python unit_test.py
 
 sudo: required
 dist: trusty
