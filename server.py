@@ -55,9 +55,6 @@ class User(db.Model):
         self.username = username
         self.password = password
 
-    def __repr__(self):
-        return '<User %r>' % self.username
-
 class Order(db.Model):
     __tablename__ = 'Order'
     order_id = db.Column(db.Integer, primary_key=True)
@@ -72,8 +69,6 @@ class Order(db.Model):
         self.time = curtime
         self.totalVolume = totalVolume
         self.uid = uid
-    def __repr__(self):
-        return '<Order %d>' % self.order_id
     def sellOrder(self):
         global cancel
         print self.uid
@@ -145,9 +140,6 @@ class Suborder(db.Model):
         # Attempt to execute a sell order.
         print "in sell"
         sys.stdout.flush()
-
-        #-------------- ATTENTION -----------------
-        # standard way to read curPrice
         priceLock.acquire()
         tmpPrice = curPrice
         priceLock.release()
@@ -221,13 +213,6 @@ class ItemTable(Table):
     volume = Col('Description')
     price = Col('Price')
 
-class Item(object):
-    def __init__(self, order_Id, status, quantity, price):
-        self.order_Id = order_id
-        self.status = status
-        self.quantity = volume
-        self.price = price
-
 new_order = Order(-1, -1, datetime.utcnow())
 
 # @socketio.on('my event')
@@ -251,7 +236,6 @@ def index():
 @app.route('/loginpage')
 def loginPage():
     return render_template("login.html")
-
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -325,9 +309,6 @@ def submitOrder():
         db.session.commit()
         #times in which the order will be sold
         new_order.suborderList = SplitAlgorithm.tw(new_order)
-        # for i in range(0, len(new_order.suborderList)):
-    	   # print(new_order.suborderList[i].volume)
-
         sys.stdout.flush()
         # create a new thread for the order
         orderAvailable = True
@@ -368,9 +349,6 @@ def orderDetails():
     uid = session['uid']
     user = User.query.filter_by(uid=uid).first()
     order_id = request.form['order_id']
-    # orders = Order.query.join(User, User.uid==Order.uid).filter_by(uid=uid).first()
-    # order_id = orders.order_id
-    # result = Suborder.query.filter_by(order_id=order_id).all()
     items, process, remainingVolume = getOrderDetails(order_id)
     table = ItemTable(items)
     if uid is not None:
