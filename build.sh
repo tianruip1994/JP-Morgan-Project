@@ -1,4 +1,4 @@
 #!/bin/bash
 
-python -m unittest discover
+python unit_test.py
 python server.py
