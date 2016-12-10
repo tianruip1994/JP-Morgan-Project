@@ -7,6 +7,27 @@ install: pip install Flask-SQLAlchemy Flask MYSQL-python flask-socketio Flask-Ta
 
 before_script:
 - mysql -e "CREATE DATABASE JP_Project"
+- sh -c "mysql -e 'CREATE TABLE JP_Project.order (
+    order_id int(11) NOT NULL PRIMARY KEY,
+    totalVolume int(11) NOT NULL,
+    uid int(11) NOT NULL,
+    time DATETIME DEFAULT NULL,
+    status int(11) DEFAULT 0
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;'"
+ - sh -c "mysql -e 'CREATE TABLE JP_Project.suborder (
+    suborder_id int(11) NOT NULL PRIMARY KEY,
+    status tinyint(4) NOT NULL,
+    time datetime DEFAULT NULL,
+    volume int(11) DEFAULT NULL,
+    price decimal(5,2) DEFAULT NULL,
+    order_id int(11) DEFAULT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;'"
+ - sh -c "mysql -e 'CREATE TABLE JP_Project.user(
+    `uid` INT(11) NOT NULL AUTO_INCREMENT,
+    `username` VARCHAR(45) NOT NULL,
+    `password` VARCHAR(45) NOT NULL,
+    PRIMARY KEY (`uid`),
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;'"
 
 # command to run tests
 script: 
